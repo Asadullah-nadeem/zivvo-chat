@@ -25,44 +25,50 @@ export default function ChatPanel({
     }, [messages]);
 
     return (
-        <div className="w-[380px] bg-white border-l border-gray-200 flex flex-col h-full shadow-xl z-20">
-            <div className="p-5 border-b border-gray-100 bg-white">
-                <h2 className="text-xl font-bold text-gray-800">Live Chat</h2>
-                <div className="flex gap-2 mt-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded-md">Location On</span>
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">Notifications On</span>
+        <div className="w-full h-[45vh] md:h-full md:w-[400px] bg-white border-t md:border-t-0 md:border-l border-gray-200 flex flex-col shadow-xl z-30">
+
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-gray-100 bg-white sticky top-0 z-10 flex justify-between items-center">
+                <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Live Chat</h2>
+                <div className="flex items-center gap-1.5 bg-green-50 px-2.5 py-1 rounded-lg border border-green-100">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span className="text-xs font-bold text-green-700">Online</span>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 scrollbar-hide">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50">
                 {messages.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
-                        <span className="text-4xl mb-2">💬</span>
-                        <p className="text-sm">Say Hello!</p>
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+                        </div>
+                        <p className="text-sm font-medium">Start the conversation!</p>
                     </div>
                 )}
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`flex flex-col ${msg.sender === 'You' ? 'items-end' : 'items-start'}`}>
                         <div
-                            className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed shadow-sm ${
+                            className={`max-w-[85%] px-5 py-3 text-[15px] shadow-sm font-medium ${
                                 msg.sender === 'You'
-                                    ? 'bg-blue-600 text-white rounded-br-none'
-                                    : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                                    ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none'
+                                    : 'bg-white text-gray-800 border border-gray-200 rounded-2xl rounded-tl-none'
                             }`}
                         >
                             {msg.text}
                         </div>
-                        <span className="text-[10px] text-gray-400 mt-1.5 px-1 font-medium">{msg.time}</span>
+                        <span className="text-[10px] text-gray-400 mt-1.5 px-1 font-semibold">{msg.time}</span>
                     </div>
                 ))}
                 <div ref={bottomRef} />
             </div>
 
-            <div className="p-4 bg-white border-t border-gray-100">
-                <form onSubmit={sendMessage} className="relative mb-3">
+            {/* Input & Controls */}
+            <div className="p-5 bg-white border-t border-gray-100 space-y-3">
+                <form onSubmit={sendMessage} className="relative flex items-center gap-2">
                     <input
                         type="text"
-                        className="w-full bg-gray-100 border-0 rounded-xl px-4 py-3.5 pr-12 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all outline-none"
+                        className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-5 py-3.5 text-gray-900 font-medium placeholder-gray-400 focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:bg-white transition-all outline-none"
                         placeholder="Type a message..."
                         value={inputText}
                         onChange={(e) => setInputText(e.target.value)}
@@ -71,9 +77,9 @@ export default function ChatPanel({
                     <button
                         type="submit"
                         disabled={isSearching || !inputText.trim()}
-                        className="absolute right-2 top-2 p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors"
+                        className="p-3.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 transition-colors shadow-lg shadow-blue-600/20"
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                         </svg>
                     </button>
@@ -81,19 +87,17 @@ export default function ChatPanel({
 
                 <button
                     onClick={handleNextPartner}
-                    className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+                    className="w-full py-4 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-900 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                     {isSearching ? (
                         <>
                             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Searching...
+                            <span>Searching...</span>
                         </>
                     ) : (
                         <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Find New Partner
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            <span>Skip Partner</span>
                         </>
                     )}
                 </button>
