@@ -7,7 +7,7 @@
     "frontend:build": "next build",
     "frontend:start": "next start",
     "frontend:lint": "eslint",
-    "server:start": "nodemon --exec ts-node server.ts",
+    "server:start": "nodemon --exec ts-node api/server.ts",
     "server:build": "tsc server.ts",
     "dev:all": "concurrently \"npm run server:start\" \"npm run frontend:dev\"",
     "build:all": "npm run server:build && npm run frontend:build"

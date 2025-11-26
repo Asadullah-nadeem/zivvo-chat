@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  zivvochat-server:
+    image: zivvochat/server:latest
+    build:
+      context: .
+      target: server-runtime
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./api/server.ts:/app/api/server.ts
+    environment:
+      - NODE_ENV=production
+    networks:
+      - zivvochat-network
+
+  zivvochat-frontend:
+    image: zivvochat/frontend:latest
+    build:
+      context: .
+      target: frontend-runtime
+    ports:
+      - "3000:3000"
+    depends_on:
+      - zivvochat-server
+    environment:
+      - NEXT_PUBLIC_SERVER_URL=http://zivvochat-server:5000
+    networks:
+      - zivvochat-network
+
+networks:
+  zivvochat-network:
+    driver: bridge
