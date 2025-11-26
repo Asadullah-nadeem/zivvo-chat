@@ -7,7 +7,7 @@ const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: ["http://localhost:3000", "http://localhost:3002"],
         methods: ["GET", "POST"]
     }
 });
@@ -18,19 +18,53 @@ interface WaitingUser {
     id: string;
     socket: Socket;
     name: string;
+    coords: { lat: number; lng: number } | null;
 }
 
-let waitingUser: WaitingUser | null = null;
+let waitingUsers: WaitingUser[] = [];
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
 io.on('connection', (socket) => {
-    socket.on('join-pool', ({ name }) => {
-        if (waitingUser) {
-            const roomName = `room-${waitingUser.id}-${socket.id}`;
+    socket.on('join-pool', ({ name, location }) => {
+        if (waitingUsers.length > 0) {
+            let bestMatchIndex = 0;
+
+            if (location) {
+                let minDistance = Infinity;
+                const limit = Math.min(waitingUsers.length, 5);
+
+                for (let i = 0; i < limit; i++) {
+                    const user = waitingUsers[i];
+                    if (user.coords) {
+                        const dist = getDistance(location.lat, location.lng, user.coords.lat, user.coords.lng);
+                        if (dist < minDistance) {
+                            minDistance = dist;
+                            bestMatchIndex = i;
+                        }
+                    }
+                }
+            }
+
+            const partner = waitingUsers[bestMatchIndex];
+            waitingUsers.splice(bestMatchIndex, 1);
+
+            const roomName = `room-${partner.id}-${socket.id}`;
 
             socket.join(roomName);
-            waitingUser.socket.join(roomName);
+            partner.socket.join(roomName);
 
-            io.to(waitingUser.id).emit('match-found', {
+            io.to(partner.id).emit('match-found', {
                 room: roomName,
                 partnerName: name,
                 initiator: true
@@ -38,14 +72,12 @@ io.on('connection', (socket) => {
 
             socket.emit('match-found', {
                 room: roomName,
-                partnerName: waitingUser.name,
+                partnerName: partner.name,
                 initiator: false
             });
-
-            waitingUser = null;
         } else {
-            waitingUser = { id: socket.id, socket, name };
-            socket.emit('waiting', { message: 'Searching for a partner...' });
+            waitingUsers.push({ id: socket.id, socket, name, coords: location });
+            socket.emit('waiting', { message: 'Looking for someone...' });
         }
     });
 
@@ -65,7 +97,9 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit('chat-message', data);
     });
 
-    socket.on('next-partner', () => {
+    const cleanupUser = () => {
+        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
+
         const rooms = Array.from(socket.rooms);
         const chatRoom = rooms.find(r => r.startsWith('room-'));
 
@@ -73,26 +107,10 @@ io.on('connection', (socket) => {
             socket.to(chatRoom).emit('partner-disconnected');
             socket.leave(chatRoom);
         }
+    };
 
-        if (waitingUser && waitingUser.id === socket.id) {
-            waitingUser = null;
-        }
-    });
-
-    socket.on('disconnecting', () => {
-        const rooms = Array.from(socket.rooms);
-        const chatRoom = rooms.find(r => r.startsWith('room-'));
-
-        if (chatRoom) {
-            socket.to(chatRoom).emit('partner-disconnected');
-        }
-    });
-
-    socket.on('disconnect', () => {
-        if (waitingUser && waitingUser.id === socket.id) {
-            waitingUser = null;
-        }
-    });
+    socket.on('next-partner', cleanupUser);
+    socket.on('disconnect', cleanupUser);
 });
 
 httpServer.listen(PORT, () => {
