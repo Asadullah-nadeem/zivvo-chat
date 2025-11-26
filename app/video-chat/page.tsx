@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { ChatMessage, MatchData, SignalData, ChatData } from '../types/types';
+import { ChatMessage, MatchData, SignalData, ChatData } from '@/app/types';
 
 import VideoArea from './components/VideoArea';
 import ChatPanel from './components/ChatPanel';
@@ -11,6 +11,7 @@ import PermissionGuard from './components/PermissionGuard';
 
 export default function VideoChatPage() {
     const router = useRouter();
+
     const [status, setStatus] = useState<string>('Initializing...');
     const [permissionGranted, setPermissionGranted] = useState(false);
     const [myName, setMyName] = useState('');
@@ -19,8 +20,10 @@ export default function VideoChatPage() {
     const [inputText, setInputText] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [locationCoords, setLocationCoords] = useState<{lat: number, lng: number} | null>(null);
+
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+
     const socketRef = useRef<Socket | null>(null);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
@@ -37,12 +40,25 @@ export default function VideoChatPage() {
     }, []);
 
     const handleAnswer = useCallback(async ({ answer }: SignalData) => {
-        if (peerConnection.current && answer) {
-            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+        const pc = peerConnection.current;
+        if (!pc || !answer) return;
+
+        if (pc.signalingState === 'stable') {
+            return;
+        }
+
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+            console.error(err);
         }
     }, []);
 
     const initializePeerConnection = useCallback(async (initiator: boolean, room: string) => {
+        if (peerConnection.current) {
+            peerConnection.current.close();
+        }
+
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
@@ -66,25 +82,43 @@ export default function VideoChatPage() {
         };
 
         if (initiator) {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            socketRef.current?.emit('offer', { room, offer });
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socketRef.current?.emit('offer', { room, offer });
+            } catch (err) {
+                console.error(err);
+            }
         }
     }, []);
 
     const handleOffer = useCallback(async ({ offer, room }: SignalData) => {
-        if (!peerConnection.current) return;
-        if (offer) {
-            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.current.createAnswer();
-            await peerConnection.current.setLocalDescription(answer);
+        const pc = peerConnection.current;
+        if (!pc || !offer) return;
+
+        if (pc.signalingState !== "stable") {
+            return;
+        }
+
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
             socketRef.current?.emit('answer', { room, answer });
+        } catch (err) {
+            console.error(err);
         }
     }, []);
 
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
-        socketRef.current = io('http://localhost:8090');
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8090';
+
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+
+        socketRef.current = io(socketUrl);
 
         socketRef.current.emit('join-pool', { name, location: loc });
         setIsSearching(true);
@@ -158,7 +192,7 @@ export default function VideoChatPage() {
                     setLocationCoords(coords);
 
                 } catch (e) {
-                    console.log("Location skipped or denied for speed.");
+                    console.log(e);
                 }
 
                 if ('Notification' in window) {
@@ -178,13 +212,10 @@ export default function VideoChatPage() {
         getPermissions().catch(console.error);
 
         return () => {
-            // Cleanup on unmount
             localStreamRef.current?.getTracks().forEach(track => track.stop());
             socketRef.current?.disconnect();
             if (peerConnection.current) peerConnection.current.close();
         };
-        // Empty dependency array to run ONLY ONCE on mount
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleNextPartner = () => {
