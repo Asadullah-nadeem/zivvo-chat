@@ -19,20 +19,15 @@ WORKDIR /app
 COPY --from=base /app/node_modules /app/node_modules
 COPY --from=server-build /app/api/server.js /app/api/
 COPY --from=server-build /app/.env /app/
-
 EXPOSE 5000
 CMD ["node", "api/server.js"]
 
-
 FROM node:20-alpine AS frontend-runtime
 WORKDIR /app
-
-# Copy production dependencies
 COPY --from=base /app/node_modules /app/node_modules
 COPY --from=frontend-build /app/.next /app/.next
 COPY --from=frontend-build /app/public /app/public
 COPY --from=frontend-build /app/package.json /app/
 COPY --from=frontend-build /app/next.config.ts /app/
-
 EXPOSE 3000
 CMD ["npm", "run", "frontend:start"]
