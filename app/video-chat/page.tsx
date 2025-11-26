@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { ChatMessage, MatchData, SignalData, ChatData } from '@/app/types';
+import { ChatMessage, MatchData, SignalData, ChatData } from '../types/types';
 
 import VideoArea from './components/VideoArea';
 import ChatPanel from './components/ChatPanel';
