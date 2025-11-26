@@ -1,4 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Idea
+.idea/
+.idea/workspace.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/zivvochat.iml
+.idea/.gitignore
 
 # dependencies
 /node_modules
