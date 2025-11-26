@@ -9,13 +9,11 @@ export default function Home() {
             <Header />
 
             <main className="flex-1 flex items-center justify-center relative">
-                {/* Background Decor (Optional Subtle Blob) */}
                 <div className="absolute top-0 right-0 -z-10 w-[50%] h-[50%] bg-gradient-to-b from-blue-50/50 to-transparent blur-3xl opacity-60" />
 
                 <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-0">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center min-h-[calc(100vh-80px)]">
 
-                        {/* LEFT SIDE: Hero Section (Span 7 cols) */}
                         <div className="lg:col-span-7 space-y-8 text-center lg:text-left pt-10 lg:pt-0">
                             <div className="inline-flex items-center px-4 py-2 bg-blue-50 border border-blue-100 rounded-full text-blue-700 text-sm font-bold shadow-sm">
                                 <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
@@ -44,7 +42,6 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* RIGHT SIDE: Login Form (Span 5 cols) */}
                         <div className="lg:col-span-5 w-full flex justify-center lg:justify-end pb-10 lg:pb-0">
                             <LoginForm />
                         </div>

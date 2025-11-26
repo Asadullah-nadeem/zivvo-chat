@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { io, Socket } from 'socket.io-client';
-import { ChatMessage, MatchData, SignalData, ChatData } from '../types/types';
+import { ChatMessage, MatchData, SignalData, ChatData } from '@/app/types';
 
 import VideoArea from './components/VideoArea';
 import ChatPanel from './components/ChatPanel';
@@ -40,12 +40,25 @@ export default function VideoChatPage() {
     }, []);
 
     const handleAnswer = useCallback(async ({ answer }: SignalData) => {
-        if (peerConnection.current && answer) {
-            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(answer));
+        const pc = peerConnection.current;
+        if (!pc || !answer) return;
+
+        if (pc.signalingState === 'stable') {
+            return;
+        }
+
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        } catch (err) {
+            console.error(err);
         }
     }, []);
 
     const initializePeerConnection = useCallback(async (initiator: boolean, room: string) => {
+        if (peerConnection.current) {
+            peerConnection.current.close();
+        }
+
         const pc = new RTCPeerConnection({
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
@@ -69,25 +82,43 @@ export default function VideoChatPage() {
         };
 
         if (initiator) {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            socketRef.current?.emit('offer', { room, offer });
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                socketRef.current?.emit('offer', { room, offer });
+            } catch (err) {
+                console.error(err);
+            }
         }
     }, []);
 
     const handleOffer = useCallback(async ({ offer, room }: SignalData) => {
-        if (!peerConnection.current) return;
-        if (offer) {
-            await peerConnection.current.setRemoteDescription(new RTCSessionDescription(offer));
-            const answer = await peerConnection.current.createAnswer();
-            await peerConnection.current.setLocalDescription(answer);
+        const pc = peerConnection.current;
+        if (!pc || !offer) return;
+
+        if (pc.signalingState !== "stable") {
+            return;
+        }
+
+        try {
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
             socketRef.current?.emit('answer', { room, answer });
+        } catch (err) {
+            console.error(err);
         }
     }, []);
 
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
-        socketRef.current = io('http://localhost:8090');
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8090';
+
+        if (socketRef.current) {
+            socketRef.current.disconnect();
+        }
+
+        socketRef.current = io(socketUrl);
 
         socketRef.current.emit('join-pool', { name, location: loc });
         setIsSearching(true);
@@ -138,7 +169,7 @@ export default function VideoChatPage() {
 
         const getPermissions = async () => {
             try {
-                setStatus('Setting up...');
+                setStatus('Requesting Permissions...');
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
                 localStreamRef.current = stream;
@@ -161,7 +192,7 @@ export default function VideoChatPage() {
                     setLocationCoords(coords);
 
                 } catch (e) {
-                    console.log("Location skipped or denied for speed.");
+                    console.log(e);
                 }
 
                 if ('Notification' in window) {
@@ -185,7 +216,7 @@ export default function VideoChatPage() {
             socketRef.current?.disconnect();
             if (peerConnection.current) peerConnection.current.close();
         };
-    }, [connectSocket, router]);
+    }, []);
 
     const handleNextPartner = () => {
         if (peerConnection.current) {
@@ -199,6 +230,16 @@ export default function VideoChatPage() {
         setStatus('Searching...');
         socketRef.current?.emit('next-partner');
         socketRef.current?.emit('join-pool', { name: myName, location: locationCoords });
+    };
+
+    const handleLeave = () => {
+        if (peerConnection.current) {
+            peerConnection.current.close();
+            peerConnection.current = null;
+        }
+        localStreamRef.current?.getTracks().forEach(track => track.stop());
+        socketRef.current?.disconnect();
+        router.push('/');
     };
 
     const sendMessage = (e: React.FormEvent) => {
@@ -216,7 +257,7 @@ export default function VideoChatPage() {
     }
 
     return (
-        <div className="h-screen w-full flex overflow-hidden bg-black">
+        <div className="h-[100dvh] w-full flex flex-col md:flex-row overflow-hidden bg-white">
             <VideoArea
                 localStream={localStream}
                 remoteStream={remoteStream}
@@ -224,6 +265,7 @@ export default function VideoChatPage() {
                 myName={myName}
                 isSearching={isSearching}
                 status={status}
+                onLeave={handleLeave}
             />
             <ChatPanel
                 messages={messages}

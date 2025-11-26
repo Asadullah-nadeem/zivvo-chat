@@ -1,18 +1,22 @@
 import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: ["http://localhost:3000", "http://localhost:3002"],
+        origin: process.env.CORS_ORIGIN || "*",
         methods: ["GET", "POST"]
     }
 });
 
-const PORT = 8090;
+// ✅ FIX: Parse the PORT as a number (Base 10)
+const PORT = parseInt(process.env.PORT || '8090', 10);
 
 interface WaitingUser {
     id: string;
@@ -113,6 +117,6 @@ io.on('connection', (socket) => {
     socket.on('disconnect', cleanupUser);
 });
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
 });
