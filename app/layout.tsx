@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "ZivvoChat - Instant Video Connections",
+    title: "Zivvo Chat - Instant Video Connections",
     description: "Connect with strangers instantly via secure, high-quality video chat. No registration required.",
     icons: {
         icon: "/favicon.ico",
