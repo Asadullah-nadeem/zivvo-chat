@@ -11,7 +11,6 @@ import PermissionGuard from './components/PermissionGuard';
 
 export default function VideoChatPage() {
     const router = useRouter();
-
     const [status, setStatus] = useState<string>('Initializing...');
     const [permissionGranted, setPermissionGranted] = useState(false);
     const [myName, setMyName] = useState('');
@@ -20,10 +19,8 @@ export default function VideoChatPage() {
     const [inputText, setInputText] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [locationCoords, setLocationCoords] = useState<{lat: number, lng: number} | null>(null);
-
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-
     const socketRef = useRef<Socket | null>(null);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
@@ -138,7 +135,7 @@ export default function VideoChatPage() {
 
         const getPermissions = async () => {
             try {
-                setStatus('Setting up...');
+                setStatus('Requesting Permissions...');
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
                 localStreamRef.current = stream;
@@ -181,11 +178,14 @@ export default function VideoChatPage() {
         getPermissions().catch(console.error);
 
         return () => {
+            // Cleanup on unmount
             localStreamRef.current?.getTracks().forEach(track => track.stop());
             socketRef.current?.disconnect();
             if (peerConnection.current) peerConnection.current.close();
         };
-    }, [connectSocket, router]);
+        // Empty dependency array to run ONLY ONCE on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleNextPartner = () => {
         if (peerConnection.current) {
@@ -199,6 +199,16 @@ export default function VideoChatPage() {
         setStatus('Searching...');
         socketRef.current?.emit('next-partner');
         socketRef.current?.emit('join-pool', { name: myName, location: locationCoords });
+    };
+
+    const handleLeave = () => {
+        if (peerConnection.current) {
+            peerConnection.current.close();
+            peerConnection.current = null;
+        }
+        localStreamRef.current?.getTracks().forEach(track => track.stop());
+        socketRef.current?.disconnect();
+        router.push('/');
     };
 
     const sendMessage = (e: React.FormEvent) => {
@@ -216,7 +226,7 @@ export default function VideoChatPage() {
     }
 
     return (
-        <div className="h-screen w-full flex overflow-hidden bg-black">
+        <div className="h-[100dvh] w-full flex flex-col md:flex-row overflow-hidden bg-white">
             <VideoArea
                 localStream={localStream}
                 remoteStream={remoteStream}
@@ -224,6 +234,7 @@ export default function VideoChatPage() {
                 myName={myName}
                 isSearching={isSearching}
                 status={status}
+                onLeave={handleLeave}
             />
             <ChatPanel
                 messages={messages}

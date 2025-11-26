@@ -25,13 +25,12 @@ export default function VideoArea({
 
     const [isMuted, setIsMuted] = useState(false);
 
-    // Dragging State
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
-    const [hasMoved, setHasMoved] = useState(false); // To switch from CSS positioning to JS positioning
+    const [hasMoved, setHasMoved] = useState(false);
+    // To switch from CSS positioning to JS positioning
     const dragOffset = useRef({ x: 0, y: 0 });
 
-    // Toggle Mute Logic
     const toggleMute = () => {
         if (localStream) {
             localStream.getAudioTracks().forEach(track => {
@@ -56,29 +55,24 @@ export default function VideoArea({
         }
     }, [remoteStream]);
 
-    // --- DRAG LOGIC ---
     const handlePointerDown = (e: React.PointerEvent) => {
         e.preventDefault();
         setIsDragging(true);
         setHasMoved(true);
 
-        // Current element position (or default if not moved yet)
         const element = e.currentTarget as HTMLElement;
         const rect = element.getBoundingClientRect();
         const parentRect = containerRef.current?.getBoundingClientRect();
 
-        // If hasn't moved, calculate initial position relative to parent
         let currentX = rect.left;
         let currentY = rect.top;
 
         if (parentRect) {
-            // Offset mouse click relative to the element's top-left corner
             dragOffset.current = {
                 x: e.clientX - currentX,
                 y: e.clientY - currentY
             };
 
-            // Set initial position state if it's the first drag
             if (!hasMoved) {
                 setPosition({
                     x: currentX - parentRect.left,
@@ -88,20 +82,20 @@ export default function VideoArea({
         }
     };
 
-    // Global listeners for smooth dragging even if mouse leaves element
     useEffect(() => {
         const handlePointerMove = (e: PointerEvent) => {
             if (!isDragging || !containerRef.current) return;
 
             const parentRect = containerRef.current.getBoundingClientRect();
 
-            // Calculate new position relative to parent container
             let newX = e.clientX - parentRect.left - dragOffset.current.x;
             let newY = e.clientY - parentRect.top - dragOffset.current.y;
 
             // Boundary checks (Keep inside screen)
-            const maxX = parentRect.width - 192; // 192 is roughly width of local video (w-48)
-            const maxY = parentRect.height - 256; // 256 is roughly height (aspect ratio)
+            const maxX = parentRect.width - 192;
+            // 192 is roughly width of local video (w-48)
+            const maxY = parentRect.height - 256;
+            // 256 is roughly height (aspect ratio)
 
             newX = Math.max(0, Math.min(newX, maxX));
             newY = Math.max(0, Math.min(newY, maxY));
@@ -126,10 +120,8 @@ export default function VideoArea({
 
 
     return (
-        // Full Screen Container (Removed padding, added ref)
         <div ref={containerRef} className="flex-1 bg-gray-900 relative overflow-hidden flex flex-col group">
 
-            {/* Status Pill (Floating Top Left) */}
             <div className="absolute top-6 left-6 z-30 pointer-events-none">
                 <div className={`px-4 py-2 rounded-full text-xs font-bold border shadow-lg flex items-center gap-2 backdrop-blur-md transition-all ${
                     isSearching
@@ -141,7 +133,6 @@ export default function VideoArea({
                 </div>
             </div>
 
-            {/* Main Remote Video (Full Cover) */}
             <div className="absolute inset-0 w-full h-full z-0">
                 {isSearching ? (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white/80">
@@ -161,7 +152,6 @@ export default function VideoArea({
                 )}
             </div>
 
-            {/* Partner Name Label (Overlay) */}
             {!isSearching && (
                 <div className="absolute top-6 right-6 z-20">
                     <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-xl text-sm font-bold border border-white/10 shadow-lg flex items-center gap-2">
@@ -171,7 +161,6 @@ export default function VideoArea({
                 </div>
             )}
 
-            {/* Floating Controls (Bottom Center) */}
             <div className="absolute bottom-8 left-0 w-full flex justify-center items-center z-30 pointer-events-none">
                 <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-2xl shadow-2xl flex gap-4 pointer-events-auto transform hover:scale-105 transition-all duration-300">
                     <button
@@ -199,10 +188,7 @@ export default function VideoArea({
                 </div>
             </div>
 
-            {/* ✅ DRAGGABLE LOCAL VIDEO (You)
-                - If hasMoved is false: uses CSS positioning (bottom-right default).
-                - If hasMoved is true: uses JS inline styles (top/left) for dragging.
-            */}
+
             <div
                 onPointerDown={handlePointerDown}
                 className={`absolute w-32 md:w-48 aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 z-40 cursor-move touch-none select-none transition-shadow ${

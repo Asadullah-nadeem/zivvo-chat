@@ -19,7 +19,6 @@ export default function LoginForm() {
     };
 
     return (
-        // Added 'hover:shadow-2xl' and smooth transition
         <div className="bg-white border border-gray-100 rounded-3xl shadow-xl shadow-gray-200/50 p-8 md:p-10 w-full max-w-md mx-auto transform transition-all duration-300 hover:-translate-y-1">
             <div className="text-left mb-8">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mb-5 shadow-sm">
@@ -50,7 +49,6 @@ export default function LoginForm() {
                 <button
                     type="submit"
                     disabled={!username.trim() || isLoading}
-                    // Added 'group' class for arrow animation on hover
                     className="group w-full py-4 px-6 rounded-2xl text-white font-bold text-lg bg-gray-900 hover:bg-black focus:outline-none focus:ring-4 focus:ring-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                     {isLoading ? (
@@ -58,7 +56,6 @@ export default function LoginForm() {
                     ) : (
                         <>
                             Join Now
-                            {/* Arrow slides right on hover */}
                             <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
