@@ -12,35 +12,35 @@ export default function LoginForm() {
         if (username.trim()) {
             setIsLoading(true);
             localStorage.setItem('chatUsername', username.trim());
-
             await new Promise(resolve => setTimeout(resolve, 800));
             router.push('/video-chat');
         }
     };
 
     return (
-        <div className="bg-white border border-gray-100 rounded-3xl shadow-xl shadow-gray-200/50 p-8 md:p-10 w-full max-w-md mx-auto transform transition-all duration-300 hover:-translate-y-1">
+        // Added a black border and shadow to make it pop like a card on paper
+        <div className="relative w-full max-w-md mx-auto bg-white border-2 border-gray-100 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10">
             <div className="text-left mb-8">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mb-5 shadow-sm">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 text-blue-600 mb-5 border border-blue-100">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                 </div>
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2 tracking-tight">Get Started</h2>
-                <p className="text-gray-500 font-medium">Enter your display name to join.</p>
+                <h2 className="text-3xl font-black text-black mb-2 tracking-tight">Get Started</h2>
+                <p className="text-gray-500 font-medium">Write your name to begin.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label htmlFor="username" className="block text-sm font-bold text-gray-700 ml-1">
+                    <label htmlFor="username" className="block text-sm font-bold text-gray-900 ml-1">
                         Display Name
                     </label>
                     <input
                         id="username"
                         type="text"
                         required
-                        className="block w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 font-medium placeholder-gray-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition-all duration-200"
-                        placeholder="e.g. Alex"
+                        className="block w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-black font-bold placeholder-gray-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-0 transition-all duration-200"
+                        placeholder="e.g. Asadullah"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                     />
@@ -49,7 +49,7 @@ export default function LoginForm() {
                 <button
                     type="submit"
                     disabled={!username.trim() || isLoading}
-                    className="group w-full py-4 px-6 rounded-2xl text-white font-bold text-lg bg-gray-900 hover:bg-black focus:outline-none focus:ring-4 focus:ring-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl active:scale-[0.98] flex items-center justify-center gap-2"
+                    className="group w-full py-4 px-6 rounded-xl text-white font-bold text-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] flex items-center justify-center gap-2 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                 >
                     {isLoading ? (
                         "Connecting..."
