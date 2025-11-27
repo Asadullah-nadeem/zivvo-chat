@@ -7,7 +7,7 @@ services:
       context: .
       target: server-runtime
     ports:
-      - "5000:5000"
+      - "0.0.0.0:5000:5000"
     volumes:
       - ./api/server.ts:/app/api/server.ts
     environment:
@@ -21,7 +21,7 @@ services:
       context: .
       target: frontend-runtime
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     depends_on:
       - zivvochat-server
     environment:
