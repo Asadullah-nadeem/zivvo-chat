@@ -112,7 +112,7 @@ export default function VideoChatPage() {
 
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
-        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:8090';
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
         if (socketRef.current) {
             socketRef.current.disconnect();

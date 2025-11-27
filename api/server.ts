@@ -15,8 +15,7 @@ const io = new Server(httpServer, {
     }
 });
 
-// ✅ FIX: Parse the PORT as a number (Base 10)
-const PORT = parseInt(process.env.PORT || '8090', 10);
+const PORT = parseInt(process.env.PORT || '5000', 10);
 
 interface WaitingUser {
     id: string;
@@ -118,5 +117,5 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`); // PORT is 5000
 });
