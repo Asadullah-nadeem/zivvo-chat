@@ -1,4 +1,4 @@
-```typescript
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Video, Mic, MessageSquare, User, PhoneOff, MicOff, Mic as MicOn } from 'lucide-react';
 
@@ -260,4 +260,3 @@ export default function VideoArea({
         </div>
     );
 }
-```

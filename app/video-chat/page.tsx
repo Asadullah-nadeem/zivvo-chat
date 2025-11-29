@@ -235,7 +235,10 @@ export default function VideoChatPage() {
             router.push('/');
             return;
         }
-        setMyName(name);
+        
+        if (name !== myName) {
+            setMyName(name);
+        }
 
         const getPermissions = async () => {
             try {
@@ -286,7 +289,7 @@ export default function VideoChatPage() {
             socketRef.current?.disconnect();
             if (peerConnection.current) peerConnection.current.close();
         };
-    }, []);
+    }, [connectSocket, router, myName]);
 
     // Handle Mode and Mute Switching
     useEffect(() => {
