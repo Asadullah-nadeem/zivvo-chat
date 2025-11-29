@@ -9,6 +9,14 @@ import VideoArea from './components/VideoArea';
 import ChatPanel from './components/ChatPanel';
 import PermissionGuard from './components/PermissionGuard';
 
+const ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+];
+
 export default function VideoChatPage() {
     const router = useRouter();
 
@@ -23,11 +31,72 @@ export default function VideoChatPage() {
 
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    
+    const [mode, setMode] = useState<'video' | 'audio' | 'text'>('video');
 
     const socketRef = useRef<Socket | null>(null);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
     const localStreamRef = useRef<MediaStream | null>(null);
     const roomRef = useRef<string | null>(null);
+    const statsInterval = useRef<NodeJS.Timeout | null>(null);
+
+    // --- Network Quality & Load Balancing Logic ---
+    const monitorConnectionQuality = useCallback(async () => {
+        if (!peerConnection.current) return;
+
+        try {
+            const stats = await peerConnection.current.getStats();
+            let packetsLost = 0;
+            let roundTripTime = 0;
+
+            stats.forEach(report => {
+                if (report.type === 'inbound-rtp' && report.kind === 'video') {
+                    packetsLost = report.packetsLost;
+                }
+                if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+                    roundTripTime = report.currentRoundTripTime;
+                }
+            });
+
+            // Adaptive Bitrate Logic
+            const senders = peerConnection.current.getSenders();
+            const videoSender = senders.find(s => s.track?.kind === 'video');
+
+            if (videoSender) {
+                const params = videoSender.getParameters();
+                if (!params.encodings) params.encodings = [{}];
+
+                if (packetsLost > 50 || roundTripTime > 0.2) {
+                    // Weak internet: Reduce quality
+                    console.log('Weak network detected. Reducing quality...');
+                    params.encodings[0].maxBitrate = 200000; // 200 kbps
+                    params.encodings[0].scaleResolutionDownBy = 2;
+                } else {
+                    // Strong internet: High quality
+                    console.log('Strong network detected. Maximizing quality...');
+                    params.encodings[0].maxBitrate = 1500000; // 1.5 Mbps
+                    params.encodings[0].scaleResolutionDownBy = 1;
+                }
+
+                videoSender.setParameters(params).catch(e => console.warn("Bitrate adaptation failed", e));
+            }
+
+        } catch (e) {
+            console.error("Error monitoring stats:", e);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (status === 'Connected') {
+            statsInterval.current = setInterval(monitorConnectionQuality, 5000);
+        } else {
+            if (statsInterval.current) clearInterval(statsInterval.current);
+        }
+        return () => {
+            if (statsInterval.current) clearInterval(statsInterval.current);
+        };
+    }, [status, monitorConnectionQuality]);
+
 
     const handleIceCandidate = useCallback(async ({ candidate }: SignalData) => {
         if (peerConnection.current && candidate) {
@@ -60,13 +129,20 @@ export default function VideoChatPage() {
         }
 
         const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            iceServers: ICE_SERVERS
         });
 
         peerConnection.current = pc;
 
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => {
+                // If mode is audio, don't add video track initially, or disable it
+                if (mode === 'audio' && track.kind === 'video') {
+                    track.enabled = false;
+                }
+                if (mode === 'text') {
+                    track.enabled = false;
+                }
                 pc.addTrack(track, localStreamRef.current!);
             });
         }
@@ -90,7 +166,7 @@ export default function VideoChatPage() {
                 console.error(err);
             }
         }
-    }, []);
+    }, [mode]);
 
     const handleOffer = useCallback(async ({ offer, room }: SignalData) => {
         const pc = peerConnection.current;
@@ -112,7 +188,6 @@ export default function VideoChatPage() {
 
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
-        // Add Here Url For Using ENV
         const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
         if (socketRef.current) {
@@ -219,6 +294,18 @@ export default function VideoChatPage() {
         };
     }, []);
 
+    // Handle Mode Switching
+    useEffect(() => {
+        if (localStreamRef.current) {
+            localStreamRef.current.getVideoTracks().forEach(track => {
+                track.enabled = mode === 'video';
+            });
+            localStreamRef.current.getAudioTracks().forEach(track => {
+                track.enabled = mode !== 'text';
+            });
+        }
+    }, [mode]);
+
     const handleNextPartner = () => {
         if (peerConnection.current) {
             peerConnection.current.close();
@@ -267,6 +354,8 @@ export default function VideoChatPage() {
                 isSearching={isSearching}
                 status={status}
                 onLeave={handleLeave}
+                mode={mode}
+                setMode={setMode}
             />
             <ChatPanel
                 messages={messages}
