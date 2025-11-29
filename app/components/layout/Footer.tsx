@@ -3,12 +3,11 @@ import Link from 'next/link';
 
 export default function Footer() {
     return (
-        // Fixed: Removed absolute positioning. Now it sits naturally at the bottom.
         <footer className="w-full py-6 border-t border-gray-200 bg-white/50 backdrop-blur-sm mt-auto">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="text-center md:text-left flex flex-col md:flex-row items-center gap-2 md:gap-6">
                     <p className="text-sm text-gray-600 font-medium">Connect instantly, chat freely.</p>
-                    <Link href="/about" className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+                    <Link href="/#about" className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
                         About & API
                     </Link>
                 </div>
