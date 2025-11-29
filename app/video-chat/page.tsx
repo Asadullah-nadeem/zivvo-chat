@@ -231,16 +231,6 @@ export default function VideoChatPage() {
 
     useEffect(() => {
         const name = localStorage.getItem('chatUsername');
-        if (!name) {
-            router.push('/');
-            return;
-        }
-        setMyName(name);
-
-        const getPermissions = async () => {
-            try {
-                setStatus('Requesting Permissions...');
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
                 localStreamRef.current = stream;
                 setLocalStream(stream);
@@ -286,7 +276,7 @@ export default function VideoChatPage() {
             socketRef.current?.disconnect();
             if (peerConnection.current) peerConnection.current.close();
         };
-    }, []);
+    }, [connectSocket, router, myName]);
 
     // Handle Mode and Mute Switching
     useEffect(() => {
