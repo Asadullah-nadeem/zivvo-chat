@@ -226,32 +226,6 @@ export default function VideoChatPage() {
             }
             setIsSearching(true);
             socketRef.current?.emit('join-pool', { name, location: loc });
-        });
-    }, [handleOffer, handleAnswer, handleIceCandidate, initializePeerConnection]);
-
-    useEffect(() => {
-        const name = localStorage.getItem('chatUsername');
-        if (!name) {
-            router.push('/');
-            return;
-        }
-        
-        if (name !== myName) {
-            setMyName(name);
-        }
-
-        const getPermissions = async () => {
-            try {
-                setStatus('Requesting Permissions...');
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-                localStreamRef.current = stream;
-                setLocalStream(stream);
-
-                let coords = null;
-                try {
-                    const locationPromise = new Promise<{lat: number, lng: number}>((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(
                             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
                             (err) => reject(err)
                         );
