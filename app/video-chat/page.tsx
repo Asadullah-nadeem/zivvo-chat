@@ -33,6 +33,7 @@ export default function VideoChatPage() {
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     
     const [mode, setMode] = useState<'video' | 'audio' | 'text'>('video');
+    const [isMuted, setIsMuted] = useState(false);
 
     const socketRef = useRef<Socket | null>(null);
     const peerConnection = useRef<RTCPeerConnection | null>(null);
@@ -68,12 +69,12 @@ export default function VideoChatPage() {
 
                 if (packetsLost > 50 || roundTripTime > 0.2) {
                     // Weak internet: Reduce quality
-                    console.log('Weak network detected. Reducing quality...');
+                    // console.log('Weak network detected. Reducing quality...');
                     params.encodings[0].maxBitrate = 200000; // 200 kbps
                     params.encodings[0].scaleResolutionDownBy = 2;
                 } else {
                     // Strong internet: High quality
-                    console.log('Strong network detected. Maximizing quality...');
+                    // console.log('Strong network detected. Maximizing quality...');
                     params.encodings[0].maxBitrate = 1500000; // 1.5 Mbps
                     params.encodings[0].scaleResolutionDownBy = 1;
                 }
@@ -136,13 +137,6 @@ export default function VideoChatPage() {
 
         if (localStreamRef.current) {
             localStreamRef.current.getTracks().forEach(track => {
-                // If mode is audio, don't add video track initially, or disable it
-                if (mode === 'audio' && track.kind === 'video') {
-                    track.enabled = false;
-                }
-                if (mode === 'text') {
-                    track.enabled = false;
-                }
                 pc.addTrack(track, localStreamRef.current!);
             });
         }
@@ -166,7 +160,7 @@ export default function VideoChatPage() {
                 console.error(err);
             }
         }
-    }, [mode]);
+    }, []);
 
     const handleOffer = useCallback(async ({ offer, room }: SignalData) => {
         const pc = peerConnection.current;
@@ -294,17 +288,26 @@ export default function VideoChatPage() {
         };
     }, []);
 
-    // Handle Mode Switching
+    // Handle Mode and Mute Switching
     useEffect(() => {
         if (localStreamRef.current) {
-            localStreamRef.current.getVideoTracks().forEach(track => {
-                track.enabled = mode === 'video';
+            const stream = localStreamRef.current;
+            
+            // Video tracks: enabled only in 'video' mode
+            stream.getVideoTracks().forEach(track => {
+                track.enabled = (mode === 'video');
             });
-            localStreamRef.current.getAudioTracks().forEach(track => {
-                track.enabled = mode !== 'text';
+
+            // Audio tracks: enabled if not 'text' mode AND not muted
+            stream.getAudioTracks().forEach(track => {
+                track.enabled = (mode !== 'text' && !isMuted);
             });
         }
-    }, [mode]);
+    }, [mode, isMuted]);
+
+    const toggleMute = () => {
+        setIsMuted(prev => !prev);
+    };
 
     const handleNextPartner = () => {
         if (peerConnection.current) {
@@ -356,6 +359,8 @@ export default function VideoChatPage() {
                 onLeave={handleLeave}
                 mode={mode}
                 setMode={setMode}
+                isMuted={isMuted}
+                toggleMute={toggleMute}
             />
             <ChatPanel
                 messages={messages}
