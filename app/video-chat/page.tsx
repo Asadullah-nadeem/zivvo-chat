@@ -231,6 +231,19 @@ export default function VideoChatPage() {
 
     useEffect(() => {
         const name = localStorage.getItem('chatUsername');
+        if (!name) {
+            router.push('/');
+            return;
+        }
+        
+        if (name !== myName) {
+            setMyName(name);
+        }
+
+        const getPermissions = async () => {
+            try {
+                setStatus('Requesting Permissions...');
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
                 localStreamRef.current = stream;
                 setLocalStream(stream);
