@@ -43,8 +43,7 @@ export default function TerminalAnimation({ commands = defaultCommands, classNam
                     </div>
                 ))}
                 <div className="flex items-center gap-2 mt-4">
-                    <span className="text-blue-400">➜</span>
-                    <span className="text-purple-400">~</span>
+                    
                     <div className="w-2 h-4 bg-green-400 animate-pulse"></div>
                 </div>
             </div>

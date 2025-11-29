@@ -21,8 +21,8 @@ export default function Home() {
             </div>
 
             {/* Background Gradients */}
-            <div className="fixed top-0 right-0 -z-10 w-[50%] h-[60%] bg-gradient-to-b from-blue-50 to-transparent blur-3xl opacity-80" />
-            <div className="fixed bottom-0 left-0 -z-10 w-[40%] h-[40%] bg-gradient-to-t from-blue-50 to-transparent blur-3xl opacity-80" />
+            <div className="fixed top-0 right-0 -z-10 w-[50%] h-[60%] bg-linear-to-b from-blue-50 to-transparent blur-3xl opacity-80" />
+            <div className="fixed bottom-0 left-0 -z-10 w-[40%] h-[40%] bg-linear-to-t from-blue-50 to-transparent blur-3xl opacity-80" />
 
             {/* Fix: pt-24 added taaki header content ko cover na kare */}
             <main className="flex-1 flex flex-col relative z-10 w-full pt-24 lg:pt-0">

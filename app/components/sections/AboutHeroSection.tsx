@@ -16,7 +16,7 @@ export default function AboutHeroSection({ isPageTitle = false }: AboutHeroSecti
             <div className="space-y-8 text-center lg:text-left">
                 <TitleTag className={titleClasses}>
                     Building the <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                    <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-purple-600">
                         Future of Chat
                     </span>
                 </TitleTag>
@@ -34,7 +34,7 @@ export default function AboutHeroSection({ isPageTitle = false }: AboutHeroSecti
                 </div>
             </div>
             <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
+                <div className="absolute -inset-4 bg-linear-to-r from-blue-500 to-purple-600 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
                 <TerminalAnimation className="shadow-2xl" />
             </div>
         </div>
