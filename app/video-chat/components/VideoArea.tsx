@@ -1,3 +1,4 @@
+```typescript
 import React, { useEffect, useRef, useState } from 'react';
 import { Video, Mic, MessageSquare, User, PhoneOff, MicOff, Mic as MicOn } from 'lucide-react';
 
@@ -11,6 +12,8 @@ interface Props {
     onLeave: () => void;
     mode: 'video' | 'audio' | 'text';
     setMode: (mode: 'video' | 'audio' | 'text') => void;
+    isMuted: boolean;
+    toggleMute: () => void;
 }
 
 export default function VideoArea({
@@ -22,27 +25,18 @@ export default function VideoArea({
                                       status,
                                       onLeave,
                                       mode,
-                                      setMode
+                                      setMode,
+                                      isMuted,
+                                      toggleMute
                                   }: Props) {
     const localVideoRef = useRef<HTMLVideoElement>(null);
     const remoteVideoRef = useRef<HTMLVideoElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const [isMuted, setIsMuted] = useState(false);
-
     const [position, setPosition] = useState({ x: 0, y: 0 });
     const [isDragging, setIsDragging] = useState(false);
     const [hasMoved, setHasMoved] = useState(false);
     const dragOffset = useRef({ x: 0, y: 0 });
-
-    const toggleMute = () => {
-        if (localStream) {
-            localStream.getAudioTracks().forEach(track => {
-                track.enabled = !track.enabled;
-            });
-            setIsMuted(!isMuted);
-        }
-    };
 
     // Attach Streams
     useEffect(() => {
@@ -66,8 +60,8 @@ export default function VideoArea({
         const rect = element.getBoundingClientRect();
         const parentRect = containerRef.current?.getBoundingClientRect();
 
-        let currentX = rect.left;
-        let currentY = rect.top;
+        const currentX = rect.left;
+        const currentY = rect.top;
 
         if (parentRect) {
             dragOffset.current = {
@@ -266,3 +260,4 @@ export default function VideoArea({
         </div>
     );
 }
+```
