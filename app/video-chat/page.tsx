@@ -61,12 +61,12 @@ export default function VideoChatPage() {
                 if (!params.encodings) params.encodings = [{}];
 
                 if (packetsLost > 50 || roundTripTime > 0.2) {
-                    // Weak internet: Reduce quality
-                    params.encodings[0].maxBitrate = 200000; // 200 kbps
+                    // Weak internet: Reduce quality but keep it usable
+                    params.encodings[0].maxBitrate = 500000; // 500 kbps
                     params.encodings[0].scaleResolutionDownBy = 2;
                 } else {
                     // Strong internet: High quality
-                    params.encodings[0].maxBitrate = 1500000; // 1.5 Mbps
+                    params.encodings[0].maxBitrate = 2500000; // 2.5 Mbps
                     params.encodings[0].scaleResolutionDownBy = 1;
                 }
 
@@ -252,20 +252,48 @@ export default function VideoChatPage() {
                 let currentMode: 'video' | 'audio' | 'text' = 'video';
 
                 try {
-                    // 1. Try Video + Audio
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                } catch (err) {
+                    // 1. Try Video + Audio with HD constraints
+                    stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 1280 }, 
+                            height: { ideal: 720 },
+                            facingMode: "user",
+                            frameRate: { ideal: 30 }
+                        }, 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        } 
+                    });
+                } catch (err: any) {
                     console.warn("Failed to get video+audio:", err);
-                    try {
-                        // 2. Fallback to Audio Only
-                        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                        currentMode = 'audio';
-                        setStatus('Camera not found. Switching to Audio mode.');
-                    } catch (err2) {
-                        console.warn("Failed to get audio:", err2);
-                        // 3. Fallback to Text Only
+                    
+                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                        setStatus('Camera/Mic permission denied. Switching to Text mode.');
                         currentMode = 'text';
-                        setStatus('No media devices found. Switching to Text mode.');
+                    } else {
+                        try {
+                            // 2. Fallback to Audio Only
+                            stream = await navigator.mediaDevices.getUserMedia({ 
+                                video: false, 
+                                audio: {
+                                    echoCancellation: true,
+                                    noiseSuppression: true
+                                } 
+                            });
+                            currentMode = 'audio';
+                            setStatus('Camera not found. Switching to Audio mode.');
+                        } catch (err2: any) {
+                            console.warn("Failed to get audio:", err2);
+                            // 3. Fallback to Text Only
+                            currentMode = 'text';
+                            if (err2.name === 'NotAllowedError') {
+                                setStatus('Microphone permission denied. Switching to Text mode.');
+                            } else {
+                                setStatus('No media devices found. Switching to Text mode.');
+                            }
+                        }
                     }
                 }
 
