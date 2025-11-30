@@ -65,15 +65,3 @@ export default function AboutPage() {
         </div>
     );
 }
-
-                    {/* Footer */}
-                    <footer className="border-t border-gray-200 pt-12 pb-8 text-center">
-                        <p className="text-gray-500 flex items-center justify-center gap-2 font-medium">
-                            Made with <Heart size={16} className="text-red-500 fill-red-500" /> by Asadullah Nadeem
-                        </p>
-                    </footer>
-                </div>
-            </main>
-        </div>
-    );
-}
