@@ -10,14 +10,6 @@ import ChatPanel from './components/ChatPanel';
 import PermissionGuard from './components/PermissionGuard';
 import { config } from '../../lib/config';
 
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-];
-
 export default function VideoChatPage() {
     const router = useRouter();
 
@@ -131,7 +123,10 @@ export default function VideoChatPage() {
         }
 
         const pc = new RTCPeerConnection({
-            iceServers: ICE_SERVERS
+            iceServers: config.iceServers,
+            iceCandidatePoolSize: 10, // Pre-gather candidates for faster connection start
+            bundlePolicy: 'max-bundle', // Optimizes connection by bundling tracks
+            rtcpMuxPolicy: 'require'
         });
 
         peerConnection.current = pc;
