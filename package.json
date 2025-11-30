@@ -7,7 +7,7 @@
     "frontend:build": "next build",
     "frontend:start": "next start",
     "frontend:lint": "eslint",
-    "server:start": "nodemon --exec ts-node api/server.ts",
+    "server:start": "nodemon --exec ts-node --project tsconfig.server.json api/server.ts",
     "server:build": "tsc api/server.ts --esModuleInterop --skipLibCheck --module commonjs --target es6 --moduleResolution node",
     "dev:all": "concurrently \"npm run server:start\" \"npm run frontend:dev\"",
     "build:all": "npm run server:build && npm run frontend:build"
