@@ -34,18 +34,16 @@ export default function TerminalAnimation({ commands = defaultCommands, classNam
             </div>
 
             {/* Terminal Body */}
-            <div className="p-6 text-green-400 h-64 md:h-80 overflow-y-auto space-y-2 scrollbar-hide">
+            <div className="p-6 text-gray-300 h-64 md:h-80 overflow-y-auto space-y-2 scrollbar-hide font-mono">
                 {commands.map((line, i) => (
                     <div key={i} className="break-words flex items-start">
-                        <span className="text-blue-400 mr-2 shrink-0">➜</span>
-                        <span className="text-purple-400 mr-2 shrink-0">~</span>
+                        <span className="text-gray-500 mr-2 shrink-0">$</span>
                         <span>{line}</span>
                     </div>
                 ))}
                 <div className="flex items-center gap-2 mt-4">
-                    <span className="text-blue-400">➜</span>
-                    <span className="text-purple-400">~</span>
-                    <div className="w-2 h-4 bg-green-400 animate-pulse"></div>
+                    <span className="text-gray-500">$</span>
+                    <div className="w-2 h-4 bg-gray-500"></div>
                 </div>
             </div>
         </div>

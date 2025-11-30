@@ -13,16 +13,16 @@ export default function Home() {
             <Header />
 
             {/* Notebook Grid Pattern Background - Fixed to cover full height */}
-            <div className="fixed inset-0 z-0 opacity-[0.4] pointer-events-none"
+            <div className="fixed inset-0 z-0 opacity-[0.6] pointer-events-none"
                  style={{
-                     backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
-                     backgroundSize: '30px 30px'
+                     backgroundImage: 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
+                     backgroundSize: '40px 40px'
                  }}>
             </div>
 
             {/* Background Gradients */}
-            <div className="fixed top-0 right-0 -z-10 w-[50%] h-[60%] bg-gradient-to-b from-blue-50 to-transparent blur-3xl opacity-80" />
-            <div className="fixed bottom-0 left-0 -z-10 w-[40%] h-[40%] bg-gradient-to-t from-blue-50 to-transparent blur-3xl opacity-80" />
+            <div className="fixed top-0 right-0 -z-10 w-[50%] h-[60%] bg-linear-to-b from-blue-50 to-transparent blur-3xl opacity-80" />
+            <div className="fixed bottom-0 left-0 -z-10 w-[40%] h-[40%] bg-linear-to-t from-blue-50 to-transparent blur-3xl opacity-80" />
 
             {/* Fix: pt-24 added taaki header content ko cover na kare */}
             <main className="flex-1 flex flex-col relative z-10 w-full pt-24 lg:pt-0">
@@ -35,7 +35,7 @@ export default function Home() {
 
                             <div className="lg:col-span-7 space-y-6 lg:space-y-8 text-center lg:text-left order-1 lg:order-1">
                                 <div className="inline-flex items-center px-4 py-2 bg-white border border-blue-100 rounded-full text-blue-700 text-xs sm:text-sm font-bold shadow-sm animate-fade-in-up mx-auto lg:mx-0">
-                                    <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2 animate-pulse"></span>
+                                    <span className="flex h-2 w-2 rounded-full bg-blue-600 mr-2"></span>
                                     Live Now: Fast Connections
                                 </div>
 

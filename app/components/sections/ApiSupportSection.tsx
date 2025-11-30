@@ -19,8 +19,8 @@ export default function ApiSupportSection() {
                         <span>Bash</span>
                     </div>
                     <code className="block">
-                        <span className="text-purple-400">curl</span> -X POST https://api.zivvochat.com/v1/rooms \<br/>
-                        &nbsp;&nbsp;-H <span className="text-green-400">&quot;Authorization: Bearer YOUR_KEY&quot;</span>
+                        <span className="text-gray-400">curl</span> -X POST https://api.zivvochat.com/v1/rooms \<br/>
+                        &nbsp;&nbsp;-H <span className="text-gray-400">&quot;Authorization: Bearer YOUR_KEY&quot;</span>
                     </code>
                 </div>
                 <button className="w-full py-3 rounded-xl bg-blue-50 text-blue-600 font-bold hover:bg-blue-600 hover:text-white transition-all">

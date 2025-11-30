@@ -34,7 +34,7 @@ export default function AboutHeroSection({ isPageTitle = false }: AboutHeroSecti
                 </div>
             </div>
             <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
+                <div className="absolute -inset-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl blur-2xl opacity-5"></div>
                 <TerminalAnimation className="shadow-2xl" />
             </div>
         </div>
