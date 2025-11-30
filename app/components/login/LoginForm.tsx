@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { config } from '../../../lib/config';
 
 export default function LoginForm() {
     const [username, setUsername] = useState('');
@@ -11,9 +12,26 @@ export default function LoginForm() {
         e.preventDefault();
         if (username.trim()) {
             setIsLoading(true);
-            localStorage.setItem('chatUsername', username.trim());
-            await new Promise(resolve => setTimeout(resolve, 800));
-            router.push('/video-chat');
+            try {
+                const response = await fetch(`${config.apiUrl}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username.trim() })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('chatToken', data.token);
+                    localStorage.setItem('chatUsername', username.trim());
+                    router.push('/video-chat');
+                } else {
+                    console.error('Login failed');
+                    setIsLoading(false);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                setIsLoading(false);
+            }
         }
     };
 
