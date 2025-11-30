@@ -8,14 +8,7 @@ import { ChatMessage, MatchData, SignalData, ChatData } from '../types/types';
 import VideoArea from './components/VideoArea';
 import ChatPanel from './components/ChatPanel';
 import PermissionGuard from './components/PermissionGuard';
-
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-];
+import { config } from '../../lib/config';
 
 export default function VideoChatPage() {
     const router = useRouter();
@@ -130,7 +123,10 @@ export default function VideoChatPage() {
         }
 
         const pc = new RTCPeerConnection({
-            iceServers: ICE_SERVERS
+            iceServers: config.iceServers,
+            iceCandidatePoolSize: 10, // Pre-gather candidates for faster connection start
+            bundlePolicy: 'max-bundle', // Optimizes connection by bundling tracks
+            rtcpMuxPolicy: 'require'
         });
 
         peerConnection.current = pc;
@@ -182,7 +178,7 @@ export default function VideoChatPage() {
 
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
-        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+        const socketUrl = config.socketUrl;
 
         if (socketRef.current) {
             socketRef.current.disconnect();
@@ -265,7 +261,7 @@ export default function VideoChatPage() {
                     setLocationCoords(coords);
 
                 } catch (e) {
-                    console.log(e);
+                    console.log("Location access denied or timed out, proceeding without location.", e);
                 }
 
                 if ('Notification' in window) {
@@ -276,9 +272,17 @@ export default function VideoChatPage() {
                 connectSocket(name, coords);
 
             } catch (error) {
-                console.error(error);
-                setPermissionGranted(false);
-                setStatus('Permissions Required');
+                console.error("Permission Error:", error);
+                // Check if it's a media device error
+                if (error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'NotFoundError')) {
+                     setPermissionGranted(false);
+                     setStatus('Permissions Required');
+                } else {
+                    // If it's just location or something else, we might still want to allow access but with limited features
+                    // For now, let's assume camera/mic are critical.
+                    setPermissionGranted(false);
+                    setStatus('Permissions Required');
+                }
             }
         };
 
