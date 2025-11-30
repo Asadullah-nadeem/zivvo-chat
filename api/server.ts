@@ -2,20 +2,49 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
 const app = express();
+app.use(express.json()); // Enable JSON body parsing
+
+// Enable CORS for API routes
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "http://localhost:3000");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(200);
+        return;
+    }
+    next();
+});
+
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || "*",
+        origin: process.env.CORS_ORIGIN || "http://localhost:3000",
         methods: ["GET", "POST"]
     }
 });
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
+
+// --- API Routes ---
+app.post('/api/login', (req, res) => {
+    const { username } = req.body;
+    if (!username) {
+        res.status(400).json({ error: 'Username is required' });
+        return;
+    }
+    
+    // Create a token that expires in 24 hours
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token });
+});
 
 interface WaitingUser {
     id: string;
@@ -37,6 +66,23 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
+
+// --- Socket Middleware ---
+io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+        return next(new Error("Authentication error: No token provided"));
+    }
+
+    jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
+        if (err) {
+            return next(new Error("Authentication error: Invalid token"));
+        }
+        // Attach user info to socket if needed
+        (socket as any).user = decoded;
+        next();
+    });
+});
 
 io.on('connection', (socket) => {
     socket.on('join-pool', ({ name, location }) => {
@@ -117,5 +163,5 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`); // PORT is 5000
+    console.log(`Server running on port ${PORT}`);
 });

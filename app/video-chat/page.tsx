@@ -62,12 +62,10 @@ export default function VideoChatPage() {
 
                 if (packetsLost > 50 || roundTripTime > 0.2) {
                     // Weak internet: Reduce quality
-                    // console.log('Weak network detected. Reducing quality...');
                     params.encodings[0].maxBitrate = 200000; // 200 kbps
                     params.encodings[0].scaleResolutionDownBy = 2;
                 } else {
                     // Strong internet: High quality
-                    // console.log('Strong network detected. Maximizing quality...');
                     params.encodings[0].maxBitrate = 1500000; // 1.5 Mbps
                     params.encodings[0].scaleResolutionDownBy = 1;
                 }
@@ -179,12 +177,20 @@ export default function VideoChatPage() {
     const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
         setStatus('Connecting to server...');
         const socketUrl = config.socketUrl;
+        const token = localStorage.getItem('chatToken');
 
         if (socketRef.current) {
             socketRef.current.disconnect();
         }
 
-        socketRef.current = io(socketUrl);
+        socketRef.current = io(socketUrl, {
+            auth: { token }
+        });
+
+        socketRef.current.on('connect_error', (err) => {
+            console.error("Connection Error:", err.message);
+            setStatus(`Connection Error: ${err.message}`);
+        });
 
         socketRef.current.emit('join-pool', { name, location: loc });
         setIsSearching(true);
@@ -232,17 +238,43 @@ export default function VideoChatPage() {
             return;
         }
         
-        if (name !== myName) {
-            setMyName(name);
+        // Fix: Avoid calling setMyName if it's already set to the same value
+        // This prevents the "Calling setState synchronously within an effect" warning
+        if (name !== myName && myName === '') {
+             setMyName(name);
         }
 
         const getPermissions = async () => {
             try {
                 setStatus('Requesting Permissions...');
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                
+                let stream: MediaStream | null = null;
+                let currentMode: 'video' | 'audio' | 'text' = 'video';
 
-                localStreamRef.current = stream;
-                setLocalStream(stream);
+                try {
+                    // 1. Try Video + Audio
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                } catch (err) {
+                    console.warn("Failed to get video+audio:", err);
+                    try {
+                        // 2. Fallback to Audio Only
+                        stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                        currentMode = 'audio';
+                        setStatus('Camera not found. Switching to Audio mode.');
+                    } catch (err2) {
+                        console.warn("Failed to get audio:", err2);
+                        // 3. Fallback to Text Only
+                        currentMode = 'text';
+                        setStatus('No media devices found. Switching to Text mode.');
+                    }
+                }
+
+                if (stream) {
+                    localStreamRef.current = stream;
+                    setLocalStream(stream);
+                }
+                
+                setMode(currentMode);
 
                 let coords = null;
                 try {
@@ -273,16 +305,8 @@ export default function VideoChatPage() {
 
             } catch (error) {
                 console.error("Permission Error:", error);
-                // Check if it's a media device error
-                if (error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'NotFoundError')) {
-                     setPermissionGranted(false);
-                     setStatus('Permissions Required');
-                } else {
-                    // If it's just location or something else, we might still want to allow access but with limited features
-                    // For now, let's assume camera/mic are critical.
-                    setPermissionGranted(false);
-                    setStatus('Permissions Required');
-                }
+                setPermissionGranted(false);
+                setStatus('Permissions Required');
             }
         };
 
