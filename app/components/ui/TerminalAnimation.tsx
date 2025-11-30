@@ -18,6 +18,55 @@ const defaultCommands = [
 ];
 
 export default function TerminalAnimation({ commands = defaultCommands, className = "" }: TerminalAnimationProps) {
+    const [completedLines, setCompletedLines] = React.useState<number[]>([]);
+    const [currentLineIndex, setCurrentLineIndex] = React.useState(0);
+    const [currentText, setCurrentText] = React.useState("");
+
+    React.useEffect(() => {
+        if (currentLineIndex >= commands.length) return;
+
+        const line = commands[currentLineIndex];
+        if (currentText.length < line.length) {
+            const timeout = setTimeout(() => {
+                setCurrentText(line.slice(0, currentText.length + 1));
+            }, 30 + Math.random() * 30);
+            return () => clearTimeout(timeout);
+        } else {
+            const timeout = setTimeout(() => {
+                setCompletedLines(prev => [...prev, currentLineIndex]);
+                setCurrentLineIndex(prev => prev + 1);
+                setCurrentText("");
+            }, 400);
+            return () => clearTimeout(timeout);
+        }
+    }, [currentLineIndex, currentText, commands]);
+
+    const renderLineContent = (line: string) => {
+        if (line.startsWith("npm")) {
+            return (
+                <>
+                    <span className="text-blue-400">npm</span> <span className="text-yellow-200">install</span> <span className="text-white">zivvo-chat</span>
+                </>
+            );
+        }
+        if (line.includes("[OK]")) {
+            return (
+                <>
+                    {line.split("[OK]")[0]}
+                    <span className="text-emerald-400 font-bold">[OK]</span>
+                </>
+            );
+        }
+        return line;
+    };
+
+    const getLineColor = (line: string) => {
+        if (line.startsWith("npm")) return "text-white";
+        if (line.includes("[OK]")) return "text-gray-300";
+        if (line.includes("Initialized")) return "text-blue-300 font-semibold";
+        return "text-gray-400";
+    };
+
     return (
         <div className={`bg-[#1e1e2e] rounded-xl overflow-hidden border border-white/10 shadow-2xl font-mono text-sm md:text-base ${className}`}>
             {/* Terminal Header */}
@@ -34,17 +83,35 @@ export default function TerminalAnimation({ commands = defaultCommands, classNam
             </div>
 
             {/* Terminal Body */}
-            <div className="p-6 text-gray-300 h-64 md:h-80 overflow-y-auto space-y-2 scrollbar-hide font-mono">
-                {commands.map((line, i) => (
-                    <div key={i} className="break-words flex items-start">
-                        <span className="text-gray-500 mr-2 shrink-0">$</span>
-                        <span>{line}</span>
+            <div className="p-6 h-64 md:h-80 overflow-y-auto space-y-3 scrollbar-hide font-mono text-[13px] md:text-sm leading-relaxed">
+                {completedLines.map((lineIndex) => {
+                    const line = commands[lineIndex];
+                    return (
+                        <div key={lineIndex} className="break-words flex items-start group">
+                            <span className="text-gray-500 mr-3 shrink-0 select-none">$</span>
+                            <span className={getLineColor(line)}>
+                                {renderLineContent(line)}
+                            </span>
+                        </div>
+                    );
+                })}
+                
+                {currentLineIndex < commands.length && (
+                    <div className="break-words flex items-start group">
+                        <span className="text-gray-500 mr-3 shrink-0 select-none">$</span>
+                        <span className="text-gray-300">
+                            {currentText}
+                            <span className="inline-block w-2.5 h-5 bg-gray-500/50 border border-gray-400 ml-1 align-middle"></span>
+                        </span>
                     </div>
-                ))}
-                <div className="flex items-center gap-2 mt-4">
-                    <span className="text-gray-500">$</span>
-                    <div className="w-2 h-4 bg-gray-500"></div>
-                </div>
+                )}
+
+                {currentLineIndex >= commands.length && (
+                    <div className="flex items-center gap-2 mt-4">
+                        <span className="text-gray-500">$</span>
+                        <div className="w-2.5 h-5 bg-gray-500/50 border border-gray-400"></div>
+                    </div>
+                )}
             </div>
         </div>
     );
