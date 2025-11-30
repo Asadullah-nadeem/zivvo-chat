@@ -5,13 +5,15 @@ export default function FounderSection() {
     return (
         <section className="relative">
             <div className="text-center mb-16">
-                <h2 className="text-3xl md:text-5xl font-black text-black mb-6">Meet the Founder</h2>
+                <h2 className="text-4xl sm:text-5xl lg:text-7xl font-black text-black tracking-tight leading-[1.1] mb-6">
+                    Meet the <span className="text-blue-600">Founder</span>
+                </h2>
                 <p className="text-gray-600 max-w-2xl mx-auto text-lg">
                     The mind behind the code. Passionate about connecting people through technology.
                 </p>
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-3xl p-8 md:p-12 max-w-4xl mx-auto shadow-xl hover:shadow-2xl transition-all duration-300">
+            <div className="bg-transparent p-8 md:p-12 max-w-4xl mx-auto transition-all duration-300">
                 <div className="flex flex-col md:flex-row items-center gap-12">
                     <div className="relative group">
                         <div className="w-48 h-48 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden border-4 border-white shadow-lg relative z-10">

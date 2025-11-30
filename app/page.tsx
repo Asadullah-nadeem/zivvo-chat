@@ -84,7 +84,7 @@ export default function Home() {
                 </section>
 
                 {/* Founder Section */}
-                <section className="w-full py-20 bg-white/50 backdrop-blur-sm border-y border-gray-100">
+                <section className="w-full py-20">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <FounderSection />
                     </div>
