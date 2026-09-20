@@ -20,7 +20,8 @@ export default function LoginForm() {
             if (result.success && result.token) {
                 localStorage.setItem('chatToken', result.token);
                 localStorage.setItem('chatUsername', username.trim());
-                router.push('/video-chat');
+                const cryptoToken = Array.from(window.crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
+                router.push(`/video-chat/${cryptoToken}`);
             } else {
                 setErrorMessage(result.error || 'Login failed. Please try again.');
                 setIsLoading(false);

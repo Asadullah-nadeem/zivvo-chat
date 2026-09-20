@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: zivvo
-      POSTGRES_PASSWORD: zivvopass
+      POSTGRES_PASSWORD: "1234"
       POSTGRES_DB: zivvochat_db
     ports:
       - "5432:5432"
@@ -35,7 +35,7 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://zivvo:zivvopass@zivvochat-db:5432/zivvochat_db
+      - DATABASE_URL=postgresql://zivvo:1234@zivvochat-db:5432/zivvochat_db
     networks:
       - zivvochat-network
 

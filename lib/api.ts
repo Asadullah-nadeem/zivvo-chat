@@ -40,10 +40,11 @@ export async function loginUser(username: string): Promise<{ success: boolean; t
         return { success: false, error: 'Username is required' };
     }
 
-    // Attempt configured API URL first, then fall back to native Next.js App Router API route (/api/login)
+    // Attempt obfuscated secure API paths first, then fallback
     const urlsToTry = [
-        `${config.apiUrl}/login`,
-        '/api/login'
+        `${config.apiUrl}/v1/auth/access`,
+        '/api/v1/auth/access',
+        `${config.apiUrl}/login`
     ];
 
     let lastError = 'Unable to connect to backend server. Make sure server is running.';
@@ -83,7 +84,11 @@ export async function loginUser(username: string): Promise<{ success: boolean; t
  * Verify JWT Token against backend or Next.js API
  */
 export async function verifyToken(token: string): Promise<boolean> {
-    const urls = [`${config.apiUrl}/verify`, '/api/verify'];
+    const urls = [
+        `${config.apiUrl}/v1/auth/verify`,
+        '/api/v1/auth/verify',
+        `${config.apiUrl}/verify`
+    ];
     for (const url of urls) {
         try {
             const res = await fetch(url, {

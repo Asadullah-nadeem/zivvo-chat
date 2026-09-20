@@ -180,9 +180,10 @@ export default function VideoArea({
             {/* Partner Name Badge */}
             {!isSearching && (
                 <div className="absolute top-6 right-6 z-20">
-                    <div className="bg-black/40 backdrop-blur-md text-white px-4 py-2 rounded-xl text-sm font-bold border border-white/10 shadow-lg flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e]"></div>
-                        {partnerName}
+                    <div className="bg-black/60 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl text-sm font-extrabold border border-white/20 shadow-xl flex items-center gap-2.5">
+                        <User size={16} className="text-blue-400" />
+                        <span>Partner: <span className="text-blue-300 font-black">{partnerName}</span></span>
+                        <div className="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_10px_#22c55e] animate-pulse"></div>
                     </div>
                 </div>
             )}
@@ -215,7 +216,7 @@ export default function VideoArea({
             {mode === 'video' && (
                 <div
                     onPointerDown={handlePointerDown}
-                    className={`absolute w-32 md:w-48 aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 z-40 cursor-move touch-none select-none transition-shadow ${
+                    className={`absolute w-36 md:w-52 aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl border-2 border-white/30 z-40 cursor-move touch-none select-none transition-shadow ${
                         isDragging ? 'shadow-blue-500/50 scale-105 ring-2 ring-blue-400' : 'hover:scale-105'
                     }`}
                     style={hasMoved ? { left: position.x, top: position.y } : { bottom: '2rem', right: '2rem' }}
@@ -231,11 +232,12 @@ export default function VideoArea({
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-white/50 text-xs">...</span>
+                                <span className="text-white/50 text-xs font-semibold">Camera Off</span>
                             </div>
                         )}
-                        <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] px-2 py-0.5 rounded font-bold">
-                            {myName} (You)
+                        <div className="absolute bottom-2 left-2 right-2 bg-black/70 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-xl font-bold border border-white/10 flex items-center justify-between">
+                            <span className="truncate">{myName || 'You'}</span>
+                            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-extrabold">(You)</span>
                         </div>
                     </div>
                 </div>

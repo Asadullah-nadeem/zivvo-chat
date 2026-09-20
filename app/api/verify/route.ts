@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
+import { verifyUserToken } from '@/lib/auth';
 
 export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
@@ -11,11 +9,11 @@ export async function GET(request: Request) {
     }
 
     const token = authHeader.split(' ')[1];
+    const decoded = verifyUserToken(token);
 
-    try {
-        const decoded = jwt.verify(token, JWT_SECRET);
-        return NextResponse.json({ valid: true, user: decoded });
-    } catch {
+    if (!decoded) {
         return NextResponse.json({ valid: false, error: 'Invalid or expired token' }, { status: 401 });
     }
+
+    return NextResponse.json({ valid: true, user: decoded });
 }

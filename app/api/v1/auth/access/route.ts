@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { generateUserToken } from '@/lib/auth';
 import { saveUserLogin } from '@/lib/db';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
 
 export async function POST(request: Request) {
     try {
@@ -15,13 +13,17 @@ export async function POST(request: Request) {
 
         const cleanUsername = username.trim();
 
-        // Asynchronously save/update user in PostgreSQL
+        // Asynchronously save/update user in PostgreSQL via Drizzle ORM
         saveUserLogin(cleanUsername).catch(console.error);
 
-        // Sign JWT token valid for 24 hours
-        const token = jwt.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
+        // Generate cryptographically secure JWT token with unique userId & nonce
+        const { token, userId } = generateUserToken(cleanUsername);
 
-        return NextResponse.json({ token, username: cleanUsername });
+        return NextResponse.json({ 
+            token, 
+            username: cleanUsername, 
+            userId 
+        });
     } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Invalid request';
         return NextResponse.json({ error: msg }, { status: 400 });

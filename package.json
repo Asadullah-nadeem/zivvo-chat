@@ -12,6 +12,9 @@
     "frontend:lint": "eslint",
     "server:start": "nodemon --watch server --watch lib --exec ts-node --project tsconfig.server.json server/index.ts",
     "server:build": "tsc --project tsconfig.server.json",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
     "dev:all": "npm run dev",
     "build:all": "npm run build"
   },
@@ -25,6 +28,8 @@
     "clsx": "^2.1.1",
     "concurrently": "^8.2.2",
     "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.555.0",

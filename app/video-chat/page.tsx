@@ -10,6 +10,15 @@ import ChatPanel from './components/ChatPanel';
 import PermissionGuard from './components/PermissionGuard';
 import { config } from '../../lib/config';
 
+function generateCryptoToken64(): string {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+        const array = new Uint8Array(32);
+        window.crypto.getRandomValues(array);
+        return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+    }
+    return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+}
+
 export default function VideoChatPage() {
     const router = useRouter();
 
@@ -189,7 +198,12 @@ export default function VideoChatPage() {
         }
 
         socketRef.current = io(socketUrl, {
-            auth: { token }
+            auth: { token },
+            transports: ['websocket', 'polling'],
+            upgrade: true,
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000
         });
 
         socketRef.current.on('connect_error', (err) => {
@@ -214,11 +228,16 @@ export default function VideoChatPage() {
             setRemoteStream(null);
         });
 
-        socketRef.current.on('match-found', (data: MatchData) => {
+        socketRef.current.on('match-found', (data: MatchData & { roomCode?: string }) => {
             setIsSearching(false);
             setStatus('Connected');
             setPartnerName(data.partnerName || 'Stranger');
             roomRef.current = data.room;
+            
+            if (data.roomCode) {
+                window.history.replaceState(null, '', `/video-chat/${data.roomCode}`);
+            }
+
             initializePeerConnection(data.initiator, data.room).catch(console.error);
         });
 
@@ -242,6 +261,16 @@ export default function VideoChatPage() {
             socketRef.current?.emit('join-pool', { name, location: loc });
         });
     }, [handleOffer, handleAnswer, handleIceCandidate, initializePeerConnection]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const path = window.location.pathname;
+            if (path === '/video-chat' || path === '/video-chat/') {
+                const token = generateCryptoToken64();
+                window.history.replaceState(null, '', `/video-chat/${token}`);
+            }
+        }
+    }, []);
 
     useEffect(() => {
         const name = myName || (typeof window !== 'undefined' ? localStorage.getItem('chatUsername') : null);
@@ -373,14 +402,38 @@ export default function VideoChatPage() {
     }, [mode, isMuted]);
 
     const toggleMute = () => {
-        setIsMuted(prev => !prev);
+        setIsMuted(prev => {
+            const nextMuted = !prev;
+            if (roomRef.current) {
+                socketRef.current?.emit('call-event', {
+                    room: roomRef.current,
+                    eventType: nextMuted ? 'MIC_MUTED' : 'MIC_UNMUTED',
+                    userName: myName
+                });
+            }
+            return nextMuted;
+        });
     };
 
     const handleNextPartner = () => {
+        if (roomRef.current) {
+            socketRef.current?.emit('call-event', {
+                room: roomRef.current,
+                eventType: 'PARTNER_SKIPPED',
+                userName: myName
+            });
+        }
+
         if (peerConnection.current) {
             peerConnection.current.close();
             peerConnection.current = null;
         }
+        
+        const nextToken = generateCryptoToken64();
+        if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', `/video-chat/${nextToken}`);
+        }
+
         setRemoteStream(null);
         setMessages([]);
         setPartnerName('...');
@@ -395,6 +448,12 @@ export default function VideoChatPage() {
             peerConnection.current.close();
             peerConnection.current = null;
         }
+        
+        const botToken = generateCryptoToken64();
+        if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', `/video-chat/${botToken}`);
+        }
+
         setRemoteStream(null);
         setMessages([]);
         setPartnerName('...');
@@ -404,6 +463,14 @@ export default function VideoChatPage() {
     };
 
     const handleLeave = () => {
+        if (roomRef.current) {
+            socketRef.current?.emit('call-event', {
+                room: roomRef.current,
+                eventType: 'CALL_ENDED',
+                userName: myName
+            });
+        }
+
         if (peerConnection.current) {
             peerConnection.current.close();
             peerConnection.current = null;

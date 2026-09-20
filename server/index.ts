@@ -1,16 +1,13 @@
 import express from 'express';
 import { createServer } from 'http';
-import { Server, Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
-import { 
-    initDb, 
-    saveUserLogin, 
-    recordSessionStart, 
-    recordSessionEnd, 
-    saveChatMessage, 
-    getDbStats 
-} from '../lib/db';
+import { initDb } from '../lib/db';
+
+import authRouter from './routes/auth';
+import healthRouter from './routes/health';
+import { createStatsRouter } from './routes/stats';
+import { registerSocketHandlers, getOnlineCounts } from './socket/handlers';
 
 dotenv.config();
 
@@ -20,7 +17,7 @@ app.use(express.json());
 // Initialize PostgreSQL database connection
 initDb().catch(console.error);
 
-// Enable CORS for Express routes
+// Enable CORS Security Headers for Express routes
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',');
@@ -53,227 +50,16 @@ const io = new Server(httpServer, {
     }
 });
 
+// Register Modular REST API Routes
+app.use('/api', authRouter);
+app.use('/api', healthRouter);
+app.use('/api', createStatsRouter(() => getOnlineCounts(io)));
+
+// Register Modular Socket.IO Handlers
+registerSocketHandlers(io);
+
 const PORT = parseInt(process.env.PORT || '5000', 10);
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
-
-// Health & Stats API Fallbacks on Socket Server
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        service: 'ZivvoChat Socket.IO Server',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.get('/api/stats', async (req, res) => {
-    const dbStats = await getDbStats();
-    res.json({
-        onlineUsers: io.sockets.sockets.size,
-        waitingQueue: waitingUsers.length,
-        ...dbStats,
-        uptime: Math.floor(process.uptime()),
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.get('/api/verify', (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(401).json({ valid: false, error: 'No token provided' });
-        return;
-    }
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, JWT_SECRET, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
-        if (err || !decoded) {
-            res.status(401).json({ valid: false, error: 'Invalid or expired token' });
-            return;
-        }
-        res.json({ valid: true, user: decoded });
-    });
-});
-
-app.post('/api/login', async (req, res) => {
-    const { username } = req.body;
-    if (!username || typeof username !== 'string' || !username.trim()) {
-        res.status(400).json({ error: 'Username is required' });
-        return;
-    }
-    
-    const cleanUsername = username.trim();
-    saveUserLogin(cleanUsername).catch(console.error);
-
-    const token = jwt.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token, username: cleanUsername });
-});
-
-interface WaitingUser {
-    id: string;
-    socket: Socket;
-    name: string;
-    coords: { lat: number; lng: number } | null;
-}
-
-let waitingUsers: WaitingUser[] = [];
-
-function broadcastOnlineStats() {
-    io.emit('online-stats', {
-        onlineCount: io.sockets.sockets.size,
-        waitingCount: waitingUsers.length
-    });
-}
-
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-// --- Socket Middleware ---
-io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
-    if (!token) {
-        return next(new Error("Authentication error: No token provided"));
-    }
-
-    jwt.verify(token, JWT_SECRET, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
-        if (err || !decoded) {
-            return next(new Error("Authentication error: Invalid token"));
-        }
-        socket.data.user = decoded;
-        next();
-    });
-});
-
-io.on('connection', (socket) => {
-    broadcastOnlineStats();
-
-    socket.on('join-pool', ({ name, location }) => {
-        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
-
-        if (waitingUsers.length > 0) {
-            let bestMatchIndex = 0;
-
-            if (location) {
-                let minDistance = Infinity;
-                const limit = Math.min(waitingUsers.length, 5);
-
-                for (let i = 0; i < limit; i++) {
-                    const user = waitingUsers[i];
-                    if (user.coords) {
-                        const dist = getDistance(location.lat, location.lng, user.coords.lat, user.coords.lng);
-                        if (dist < minDistance) {
-                            minDistance = dist;
-                            bestMatchIndex = i;
-                        }
-                    }
-                }
-            }
-
-            const partner = waitingUsers[bestMatchIndex];
-            waitingUsers.splice(bestMatchIndex, 1);
-
-            const roomName = `room-${partner.id}-${socket.id}`;
-
-            socket.join(roomName);
-            partner.socket.join(roomName);
-
-            recordSessionStart(roomName, partner.name, name).catch(console.error);
-
-            io.to(partner.id).emit('match-found', {
-                room: roomName,
-                partnerName: name,
-                initiator: true
-            });
-
-            socket.emit('match-found', {
-                room: roomName,
-                partnerName: partner.name,
-                initiator: false
-            });
-        } else {
-            waitingUsers.push({ id: socket.id, socket, name, coords: location });
-            socket.emit('waiting', { 
-                message: 'Looking for someone...',
-                waitingCount: waitingUsers.length,
-                onlineCount: io.sockets.sockets.size
-            });
-        }
-
-        broadcastOnlineStats();
-    });
-
-    socket.on('request-bot-match', ({ name }) => {
-        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
-        const roomName = `room-bot-${socket.id}`;
-        socket.join(roomName);
-
-        recordSessionStart(roomName, 'Zivvo Echo Bot', name).catch(console.error);
-
-        socket.emit('match-found', {
-            room: roomName,
-            partnerName: 'Zivvo Echo Bot 🤖',
-            initiator: true,
-            isBot: true
-        });
-
-        broadcastOnlineStats();
-    });
-
-    socket.on('offer', (data) => {
-        socket.to(data.room).emit('offer', data);
-    });
-
-    socket.on('answer', (data) => {
-        socket.to(data.room).emit('answer', data);
-    });
-
-    socket.on('ice-candidate', (data) => {
-        socket.to(data.room).emit('ice-candidate', data);
-    });
-
-    socket.on('chat-message', (data) => {
-        socket.to(data.room).emit('chat-message', data);
-        
-        if (data.room && data.text) {
-            saveChatMessage(data.room, data.sender || 'User', data.text).catch(console.error);
-        }
-
-        if (data.room?.startsWith('room-bot-')) {
-            setTimeout(() => {
-                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const botReply = `Hello! I received: "${data.text}". WebRTC and Real-Time Socket communication are active! 🚀`;
-                socket.emit('chat-message', { sender: 'Zivvo Echo Bot 🤖', text: botReply, time });
-                saveChatMessage(data.room, 'Zivvo Echo Bot 🤖', botReply).catch(console.error);
-            }, 800);
-        }
-    });
-
-    const cleanupUser = () => {
-        waitingUsers = waitingUsers.filter(user => user.id !== socket.id);
-
-        const rooms = Array.from(socket.rooms);
-        const chatRoom = rooms.find(r => r.startsWith('room-'));
-
-        if (chatRoom) {
-            recordSessionEnd(chatRoom).catch(console.error);
-            socket.to(chatRoom).emit('partner-disconnected');
-            socket.leave(chatRoom);
-        }
-
-        broadcastOnlineStats();
-    };
-
-    socket.on('next-partner', cleanupUser);
-    socket.on('disconnect', cleanupUser);
-});
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ZivvoChat Socket Server running on port ${PORT}`);
+    console.log(`🚀 ZivvoChat Modular Server running on port ${PORT}`);
 });
