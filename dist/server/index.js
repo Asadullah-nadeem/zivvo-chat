@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,13 +8,13 @@ const http_1 = require("http");
 const socket_io_1 = require("socket.io");
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const db_1 = require("./db");
+const db_1 = require("../lib/db");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-app.use(express_1.default.json()); // Enable JSON body parsing
-// Initialize PostgreSQL database connection (with in-memory fallback)
+app.use(express_1.default.json());
+// Initialize PostgreSQL database connection
 (0, db_1.initDb)().catch(console.error);
-// Enable CORS for API routes
+// Enable CORS for Express routes
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',');
@@ -53,18 +44,25 @@ const io = new socket_io_1.Server(httpServer, {
 });
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
-// --- API Routes ---
+// Health & Stats API Fallbacks on Socket Server
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
+        service: 'ZivvoChat Socket.IO Server',
         uptime: process.uptime(),
         timestamp: new Date().toISOString()
     });
 });
-app.get('/api/stats', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const dbStats = yield (0, db_1.getDbStats)();
-    res.json(Object.assign(Object.assign({ onlineUsers: io.sockets.sockets.size, waitingQueue: waitingUsers.length }, dbStats), { uptime: Math.floor(process.uptime()), timestamp: new Date().toISOString() }));
-}));
+app.get('/api/stats', async (req, res) => {
+    const dbStats = await (0, db_1.getDbStats)();
+    res.json({
+        onlineUsers: io.sockets.sockets.size,
+        waitingQueue: waitingUsers.length,
+        ...dbStats,
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString()
+    });
+});
 app.get('/api/verify', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -80,19 +78,17 @@ app.get('/api/verify', (req, res) => {
         res.json({ valid: true, user: decoded });
     });
 });
-app.post('/api/login', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/login', async (req, res) => {
     const { username } = req.body;
     if (!username || typeof username !== 'string' || !username.trim()) {
         res.status(400).json({ error: 'Username is required' });
         return;
     }
     const cleanUsername = username.trim();
-    // Save/Update user in PostgreSQL
     (0, db_1.saveUserLogin)(cleanUsername).catch(console.error);
-    // Create a token that expires in 24 hours
     const token = jsonwebtoken_1.default.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ token, username: cleanUsername });
-}));
+});
 let waitingUsers = [];
 function broadcastOnlineStats() {
     io.emit('online-stats', {
@@ -125,10 +121,8 @@ io.use((socket, next) => {
     });
 });
 io.on('connection', (socket) => {
-    // Send initial online stats on connection
     broadcastOnlineStats();
     socket.on('join-pool', ({ name, location }) => {
-        // Remove existing instance of this socket if re-joining
         waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
         if (waitingUsers.length > 0) {
             let bestMatchIndex = 0;
@@ -151,7 +145,6 @@ io.on('connection', (socket) => {
             const roomName = `room-${partner.id}-${socket.id}`;
             socket.join(roomName);
             partner.socket.join(roomName);
-            // Record session start in Database
             (0, db_1.recordSessionStart)(roomName, partner.name, name).catch(console.error);
             io.to(partner.id).emit('match-found', {
                 room: roomName,
@@ -174,7 +167,6 @@ io.on('connection', (socket) => {
         }
         broadcastOnlineStats();
     });
-    // Request Virtual Echo Partner (For Solo Testing)
     socket.on('request-bot-match', ({ name }) => {
         waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
         const roomName = `room-bot-${socket.id}`;
@@ -198,14 +190,11 @@ io.on('connection', (socket) => {
         socket.to(data.room).emit('ice-candidate', data);
     });
     socket.on('chat-message', (data) => {
-        var _a;
         socket.to(data.room).emit('chat-message', data);
-        // Save message to database
         if (data.room && data.text) {
             (0, db_1.saveChatMessage)(data.room, data.sender || 'User', data.text).catch(console.error);
         }
-        // Virtual bot auto-response
-        if ((_a = data.room) === null || _a === void 0 ? void 0 : _a.startsWith('room-bot-')) {
+        if (data.room?.startsWith('room-bot-')) {
             setTimeout(() => {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const botReply = `Hello! I received: "${data.text}". WebRTC and Real-Time Socket communication are active! 🚀`;
@@ -229,5 +218,5 @@ io.on('connection', (socket) => {
     socket.on('disconnect', cleanupUser);
 });
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ZivvoChat Server running on port ${PORT}`);
+    console.log(`🚀 ZivvoChat Socket Server running on port ${PORT}`);
 });

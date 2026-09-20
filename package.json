@@ -10,8 +10,8 @@
     "frontend:build": "next build",
     "frontend:start": "next start",
     "frontend:lint": "eslint",
-    "server:start": "nodemon --exec ts-node --project tsconfig.server.json api/server.ts",
-    "server:build": "tsc api/server.ts --esModuleInterop --skipLibCheck --module commonjs --target es6 --moduleResolution node",
+    "server:start": "nodemon --watch server --watch lib --exec ts-node --project tsconfig.server.json server/index.ts",
+    "server:build": "tsc --project tsconfig.server.json",
     "dev:all": "npm run dev",
     "build:all": "npm run build"
   },

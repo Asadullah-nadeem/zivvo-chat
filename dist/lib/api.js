@@ -1,124 +1,104 @@
-import { config } from './config';
-
-export interface LoginResponse {
-    token: string;
-    username: string;
-    expiresIn?: string;
-}
-
-export interface HealthResponse {
-    status: string;
-    uptime: number;
-    timestamp: string;
-}
-
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.checkBackendHealth = checkBackendHealth;
+exports.loginUser = loginUser;
+exports.verifyToken = verifyToken;
+exports.getSystemStats = getSystemStats;
+const config_1 = require("./config");
 /**
  * Check if the backend API server is reachable
  */
-export async function checkBackendHealth(): Promise<boolean> {
-    const urls = [`${config.apiUrl}/health`, '/api/health'];
+async function checkBackendHealth() {
+    const urls = [`${config_1.config.apiUrl}/health`, '/api/health'];
     for (const url of urls) {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
             const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
             clearTimeout(timeoutId);
-            if (res.ok) return true;
-        } catch {
+            if (res.ok)
+                return true;
+        }
+        catch {
             continue;
         }
     }
     return false;
 }
-
 /**
  * Login user via API with automatic Next.js fallback
  */
-export async function loginUser(username: string): Promise<{ success: boolean; token?: string; error?: string }> {
+async function loginUser(username) {
     const cleanUsername = username.trim();
     if (!cleanUsername) {
         return { success: false, error: 'Username is required' };
     }
-
     // Attempt configured API URL first, then fall back to native Next.js App Router API route (/api/login)
     const urlsToTry = [
-        `${config.apiUrl}/login`,
+        `${config_1.config.apiUrl}/login`,
         '/api/login'
     ];
-
     let lastError = 'Unable to connect to backend server. Make sure server is running.';
-
     for (const url of urlsToTry) {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3500);
-
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: cleanUsername }),
                 signal: controller.signal
             });
-
             clearTimeout(timeoutId);
-
             if (response.ok) {
-                const data: LoginResponse = await response.json();
+                const data = await response.json();
                 return { success: true, token: data.token };
-            } else {
+            }
+            else {
                 const errData = await response.json().catch(() => ({}));
                 lastError = errData.error || `Server error (${response.status})`;
             }
-        } catch (err: unknown) {
+        }
+        catch (err) {
             if (err instanceof Error && err.name === 'AbortError') {
                 lastError = 'Connection timed out. Retrying...';
             }
         }
     }
-
     return { success: false, error: lastError };
 }
-
 /**
  * Verify JWT Token against backend or Next.js API
  */
-export async function verifyToken(token: string): Promise<boolean> {
-    const urls = [`${config.apiUrl}/verify`, '/api/verify'];
+async function verifyToken(token) {
+    const urls = [`${config_1.config.apiUrl}/verify`, '/api/verify'];
     for (const url of urls) {
         try {
             const res = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` },
                 cache: 'no-store'
             });
-            if (res.ok) return true;
-        } catch {
+            if (res.ok)
+                return true;
+        }
+        catch {
             continue;
         }
     }
     return false;
 }
-
-export interface SystemStats {
-    onlineUsers: number;
-    waitingQueue: number;
-    isDbConnected: boolean;
-    totalUsers: number;
-    totalSessions: number;
-    totalMessages: number;
-    uptime: number;
-    timestamp: string;
-}
-
 /**
  * Fetch system & database statistics
  */
-export async function getSystemStats(): Promise<SystemStats | null> {
-    const urls = [`${config.apiUrl}/stats`, '/api/stats'];
+async function getSystemStats() {
+    const urls = [`${config_1.config.apiUrl}/stats`, '/api/stats'];
     for (const url of urls) {
         try {
             const res = await fetch(url, { cache: 'no-store' });
-            if (res.ok) return await res.json();
-        } catch {
+            if (res.ok)
+                return await res.json();
+        }
+        catch {
             continue;
         }
     }

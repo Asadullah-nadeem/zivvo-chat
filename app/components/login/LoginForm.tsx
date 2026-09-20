@@ -16,7 +16,7 @@ export default function LoginForm() {
         if (username.trim()) {
             setIsLoading(true);
             const result = await loginUser(username.trim());
-            
+
             if (result.success && result.token) {
                 localStorage.setItem('chatToken', result.token);
                 localStorage.setItem('chatUsername', username.trim());
@@ -59,7 +59,7 @@ export default function LoginForm() {
                         type="text"
                         required
                         className="block w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-black font-bold placeholder-gray-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-0 transition-all duration-200"
-                        placeholder="e.g. Asadullah"
+                        placeholder="Full Name"
                         value={username}
                         onChange={(e) => {
                             setUsername(e.target.value);

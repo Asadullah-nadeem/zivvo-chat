@@ -10,17 +10,17 @@ import {
     recordSessionEnd, 
     saveChatMessage, 
     getDbStats 
-} from './db';
+} from '../lib/db';
 
 dotenv.config();
 
 const app = express();
-app.use(express.json()); // Enable JSON body parsing
+app.use(express.json());
 
-// Initialize PostgreSQL database connection (with in-memory fallback)
+// Initialize PostgreSQL database connection
 initDb().catch(console.error);
 
-// Enable CORS for API routes
+// Enable CORS for Express routes
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',');
@@ -56,11 +56,11 @@ const io = new Server(httpServer, {
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
 
-// --- API Routes ---
-
+// Health & Stats API Fallbacks on Socket Server
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
+        service: 'ZivvoChat Socket.IO Server',
         uptime: process.uptime(),
         timestamp: new Date().toISOString()
     });
@@ -101,11 +101,8 @@ app.post('/api/login', async (req, res) => {
     }
     
     const cleanUsername = username.trim();
-    
-    // Save/Update user in PostgreSQL
     saveUserLogin(cleanUsername).catch(console.error);
 
-    // Create a token that expires in 24 hours
     const token = jwt.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ token, username: cleanUsername });
 });
@@ -155,11 +152,9 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
-    // Send initial online stats on connection
     broadcastOnlineStats();
 
     socket.on('join-pool', ({ name, location }) => {
-        // Remove existing instance of this socket if re-joining
         waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
 
         if (waitingUsers.length > 0) {
@@ -189,7 +184,6 @@ io.on('connection', (socket) => {
             socket.join(roomName);
             partner.socket.join(roomName);
 
-            // Record session start in Database
             recordSessionStart(roomName, partner.name, name).catch(console.error);
 
             io.to(partner.id).emit('match-found', {
@@ -215,7 +209,6 @@ io.on('connection', (socket) => {
         broadcastOnlineStats();
     });
 
-    // Request Virtual Echo Partner (For Solo Testing)
     socket.on('request-bot-match', ({ name }) => {
         waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
         const roomName = `room-bot-${socket.id}`;
@@ -248,12 +241,10 @@ io.on('connection', (socket) => {
     socket.on('chat-message', (data) => {
         socket.to(data.room).emit('chat-message', data);
         
-        // Save message to database
         if (data.room && data.text) {
             saveChatMessage(data.room, data.sender || 'User', data.text).catch(console.error);
         }
 
-        // Virtual bot auto-response
         if (data.room?.startsWith('room-bot-')) {
             setTimeout(() => {
                 const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -284,5 +275,5 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ZivvoChat Server running on port ${PORT}`);
+    console.log(`🚀 ZivvoChat Socket Server running on port ${PORT}`);
 });

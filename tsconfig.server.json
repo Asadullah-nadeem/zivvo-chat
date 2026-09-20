@@ -10,6 +10,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["api/**/*"],
+  "include": ["server/**/*", "lib/**/*"],
   "exclude": ["node_modules"]
 }
