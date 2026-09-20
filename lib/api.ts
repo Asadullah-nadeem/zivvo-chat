@@ -80,3 +80,27 @@ export async function verifyToken(token: string): Promise<boolean> {
         return false;
     }
 }
+
+export interface SystemStats {
+    onlineUsers: number;
+    waitingQueue: number;
+    isDbConnected: boolean;
+    totalUsers: number;
+    totalSessions: number;
+    totalMessages: number;
+    uptime: number;
+    timestamp: string;
+}
+
+/**
+ * Fetch system & database statistics
+ */
+export async function getSystemStats(): Promise<SystemStats | null> {
+    try {
+        const res = await fetch(`${config.apiUrl}/stats`, { cache: 'no-store' });
+        if (!res.ok) return null;
+        return await res.json();
+    } catch {
+        return null;
+    }
+}

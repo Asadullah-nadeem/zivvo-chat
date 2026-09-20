@@ -3,11 +3,22 @@ import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import { 
+    initDb, 
+    saveUserLogin, 
+    recordSessionStart, 
+    recordSessionEnd, 
+    saveChatMessage, 
+    getDbStats 
+} from './db';
 
 dotenv.config();
 
 const app = express();
 app.use(express.json()); // Enable JSON body parsing
+
+// Initialize PostgreSQL database connection (with in-memory fallback)
+initDb().catch(console.error);
 
 // Enable CORS for API routes
 app.use((req, res, next) => {
@@ -46,10 +57,22 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
 
 // --- API Routes ---
+
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'ok',
         uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get('/api/stats', async (req, res) => {
+    const dbStats = await getDbStats();
+    res.json({
+        onlineUsers: io.sockets.sockets.size,
+        waitingQueue: waitingUsers.length,
+        ...dbStats,
+        uptime: Math.floor(process.uptime()),
         timestamp: new Date().toISOString()
     });
 });
@@ -70,7 +93,7 @@ app.get('/api/verify', (req, res) => {
     });
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username } = req.body;
     if (!username || typeof username !== 'string' || !username.trim()) {
         res.status(400).json({ error: 'Username is required' });
@@ -78,6 +101,10 @@ app.post('/api/login', (req, res) => {
     }
     
     const cleanUsername = username.trim();
+    
+    // Save/Update user in PostgreSQL
+    saveUserLogin(cleanUsername).catch(console.error);
+
     // Create a token that expires in 24 hours
     const token = jwt.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ token, username: cleanUsername });
@@ -91,6 +118,13 @@ interface WaitingUser {
 }
 
 let waitingUsers: WaitingUser[] = [];
+
+function broadcastOnlineStats() {
+    io.emit('online-stats', {
+        onlineCount: io.sockets.sockets.size,
+        waitingCount: waitingUsers.length
+    });
+}
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371;
@@ -121,7 +155,13 @@ io.use((socket, next) => {
 });
 
 io.on('connection', (socket) => {
+    // Send initial online stats on connection
+    broadcastOnlineStats();
+
     socket.on('join-pool', ({ name, location }) => {
+        // Remove existing instance of this socket if re-joining
+        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
+
         if (waitingUsers.length > 0) {
             let bestMatchIndex = 0;
 
@@ -149,6 +189,9 @@ io.on('connection', (socket) => {
             socket.join(roomName);
             partner.socket.join(roomName);
 
+            // Record session start in Database
+            recordSessionStart(roomName, partner.name, name).catch(console.error);
+
             io.to(partner.id).emit('match-found', {
                 room: roomName,
                 partnerName: name,
@@ -162,8 +205,32 @@ io.on('connection', (socket) => {
             });
         } else {
             waitingUsers.push({ id: socket.id, socket, name, coords: location });
-            socket.emit('waiting', { message: 'Looking for someone...' });
+            socket.emit('waiting', { 
+                message: 'Looking for someone...',
+                waitingCount: waitingUsers.length,
+                onlineCount: io.sockets.sockets.size
+            });
         }
+
+        broadcastOnlineStats();
+    });
+
+    // Request Virtual Echo Partner (For Solo Testing)
+    socket.on('request-bot-match', ({ name }) => {
+        waitingUsers = waitingUsers.filter(u => u.id !== socket.id);
+        const roomName = `room-bot-${socket.id}`;
+        socket.join(roomName);
+
+        recordSessionStart(roomName, 'Zivvo Echo Bot', name).catch(console.error);
+
+        socket.emit('match-found', {
+            room: roomName,
+            partnerName: 'Zivvo Echo Bot 🤖',
+            initiator: true,
+            isBot: true
+        });
+
+        broadcastOnlineStats();
     });
 
     socket.on('offer', (data) => {
@@ -180,6 +247,21 @@ io.on('connection', (socket) => {
 
     socket.on('chat-message', (data) => {
         socket.to(data.room).emit('chat-message', data);
+        
+        // Save message to database
+        if (data.room && data.text) {
+            saveChatMessage(data.room, data.sender || 'User', data.text).catch(console.error);
+        }
+
+        // Virtual bot auto-response
+        if (data.room?.startsWith('room-bot-')) {
+            setTimeout(() => {
+                const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const botReply = `Hello! I received: "${data.text}". WebRTC and Real-Time Socket communication are active! 🚀`;
+                socket.emit('chat-message', { sender: 'Zivvo Echo Bot 🤖', text: botReply, time });
+                saveChatMessage(data.room, 'Zivvo Echo Bot 🤖', botReply).catch(console.error);
+            }, 800);
+        }
     });
 
     const cleanupUser = () => {
@@ -189,9 +271,12 @@ io.on('connection', (socket) => {
         const chatRoom = rooms.find(r => r.startsWith('room-'));
 
         if (chatRoom) {
+            recordSessionEnd(chatRoom).catch(console.error);
             socket.to(chatRoom).emit('partner-disconnected');
             socket.leave(chatRoom);
         }
+
+        broadcastOnlineStats();
     };
 
     socket.on('next-partner', cleanupUser);
@@ -199,5 +284,5 @@ io.on('connection', (socket) => {
 });
 
 httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`🚀 ZivvoChat Server running on port ${PORT}`);
 });

@@ -10,6 +10,7 @@ interface Props {
     isSearching: boolean;
     status: string;
     onLeave: () => void;
+    onConnectBot?: () => void;
     mode: 'video' | 'audio' | 'text';
     setMode: (mode: 'video' | 'audio' | 'text') => void;
     isMuted: boolean;
@@ -24,6 +25,7 @@ export default function VideoArea({
                                       isSearching,
                                       status,
                                       onLeave,
+                                      onConnectBot,
                                       mode,
                                       setMode,
                                       isMuted,
@@ -58,74 +60,46 @@ export default function VideoArea({
 
         const element = e.currentTarget as HTMLElement;
         const rect = element.getBoundingClientRect();
-        const parentRect = containerRef.current?.getBoundingClientRect();
-
-        const currentX = rect.left;
-        const currentY = rect.top;
-
-        if (parentRect) {
-            dragOffset.current = {
-                x: e.clientX - currentX,
-                y: e.clientY - currentY
-            };
-
-            if (!hasMoved) {
-                setPosition({
-                    x: currentX - parentRect.left,
-                    y: currentY - parentRect.top
-                });
-            }
-        }
+        dragOffset.current = {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        };
     };
 
-    useEffect(() => {
-        const handlePointerMove = (e: PointerEvent) => {
-            if (!isDragging || !containerRef.current) return;
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!isDragging || !containerRef.current) return;
+        e.preventDefault();
 
-            const parentRect = containerRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const elementWidth = 192; // w-48 = 12rem = 192px
+        const elementHeight = 144; // h-36 = 9rem = 144px
 
-            let newX = e.clientX - parentRect.left - dragOffset.current.x;
-            let newY = e.clientY - parentRect.top - dragOffset.current.y;
+        let x = e.clientX - containerRect.left - dragOffset.current.x;
+        let y = e.clientY - containerRect.top - dragOffset.current.y;
 
-            // Boundary checks (Keep inside screen)
-            const maxX = parentRect.width - 192;
-            const maxY = parentRect.height - 256;
+        x = Math.max(16, Math.min(x, containerRect.width - elementWidth - 16));
+        y = Math.max(16, Math.min(y, containerRect.height - elementHeight - 16));
 
-            newX = Math.max(0, Math.min(newX, maxX));
-            newY = Math.max(0, Math.min(newY, maxY));
+        setPosition({ x, y });
+    };
 
-            setPosition({ x: newX, y: newY });
-        };
-
-        const handlePointerUp = () => {
-            setIsDragging(false);
-        };
-
-        if (isDragging) {
-            window.addEventListener('pointermove', handlePointerMove);
-            window.addEventListener('pointerup', handlePointerUp);
-        }
-
-        return () => {
-            window.removeEventListener('pointermove', handlePointerMove);
-            window.removeEventListener('pointerup', handlePointerUp);
-        };
-    }, [isDragging]);
+    const handlePointerUp = () => {
+        setIsDragging(false);
+    };
 
 
     return (
-        <div ref={containerRef} className="flex-1 bg-gray-900 relative overflow-hidden flex flex-col group">
+        <div
+            ref={containerRef}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            className="flex-1 bg-gray-950 relative overflow-hidden flex items-center justify-center select-none"
+        >
 
-            {/* Status Badge */}
-            <div className="absolute top-6 left-6 z-30 pointer-events-none">
-                <div className={`px-4 py-2 rounded-full text-xs font-bold border shadow-lg flex items-center gap-2 backdrop-blur-md transition-all ${
-                    isSearching
-                        ? 'bg-black/40 text-yellow-400 border-yellow-500/30'
-                        : 'bg-white/90 text-green-600 border-white'
-                }`}>
-                    <span className={`w-2.5 h-2.5 rounded-full ${isSearching ? 'bg-yellow-400 animate-pulse' : 'bg-green-500'}`} />
-                    {status}
-                </div>
+            {/* Status Overlay */}
+            <div className="absolute top-6 left-6 z-30 flex items-center gap-3 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span className="text-white/90 text-sm font-semibold tracking-wide">{status}</span>
             </div>
 
             {/* Mode Switcher */}
@@ -156,12 +130,21 @@ export default function VideoArea({
             {/* Main Content Area */}
             <div className="absolute inset-0 w-full h-full z-0">
                 {isSearching ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white/80">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white/80 p-6 text-center">
                         <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
                             <span className="absolute inset-0 border-4 border-white/10 rounded-full animate-ping"></span>
                             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                         </div>
-                        <h3 className="text-2xl font-bold text-white tracking-wide">Finding Partner...</h3>
+                        <h3 className="text-2xl font-bold text-white tracking-wide mb-2">Finding Partner...</h3>
+                        <p className="text-sm text-gray-400 max-w-sm mb-6">Looking for an active user online...</p>
+                        {onConnectBot && (
+                            <button
+                                onClick={onConnectBot}
+                                className="px-5 py-2.5 rounded-full bg-blue-600/30 hover:bg-blue-600/50 border border-blue-400/40 text-blue-200 text-sm font-semibold transition-all shadow-md active:scale-95"
+                            >
+                                🤖 Test Connection with Echo Bot
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <>

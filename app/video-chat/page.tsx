@@ -200,8 +200,15 @@ export default function VideoChatPage() {
         socketRef.current.emit('join-pool', { name, location: loc });
         setIsSearching(true);
 
-        socketRef.current.on('waiting', (data: { message: string }) => {
-            setStatus(data.message);
+        socketRef.current.on('online-stats', (data: { onlineCount: number; waitingCount: number }) => {
+            if (data.onlineCount !== undefined) {
+                setStatus(prev => prev === 'Connected' ? 'Connected' : `Searching (Users online: ${data.onlineCount})...`);
+            }
+        });
+
+        socketRef.current.on('waiting', (data: { message: string; onlineCount?: number }) => {
+            const countMsg = data.onlineCount ? ` (Online: ${data.onlineCount})` : '';
+            setStatus(`${data.message}${countMsg}`);
             setIsSearching(true);
             setPartnerName('...');
             setRemoteStream(null);
@@ -383,6 +390,19 @@ export default function VideoChatPage() {
         socketRef.current?.emit('join-pool', { name: myName, location: locationCoords });
     };
 
+    const handleConnectBot = () => {
+        if (peerConnection.current) {
+            peerConnection.current.close();
+            peerConnection.current = null;
+        }
+        setRemoteStream(null);
+        setMessages([]);
+        setPartnerName('...');
+        setIsSearching(true);
+        setStatus('Connecting to Echo Bot...');
+        socketRef.current?.emit('request-bot-match', { name: myName });
+    };
+
     const handleLeave = () => {
         if (peerConnection.current) {
             peerConnection.current.close();
@@ -417,6 +437,7 @@ export default function VideoChatPage() {
                 isSearching={isSearching}
                 status={status}
                 onLeave={handleLeave}
+                onConnectBot={handleConnectBot}
                 mode={mode}
                 setMode={setMode}
                 isMuted={isMuted}
