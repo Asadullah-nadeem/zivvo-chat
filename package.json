@@ -3,14 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "concurrently \"npm run server:start\" \"npm run frontend:dev\"",
+    "start": "concurrently \"npm run server:start\" \"npm run frontend:start\"",
+    "build": "npm run server:build && npm run frontend:build",
     "frontend:dev": "next dev",
     "frontend:build": "next build",
     "frontend:start": "next start",
     "frontend:lint": "eslint",
     "server:start": "nodemon --exec ts-node --project tsconfig.server.json api/server.ts",
     "server:build": "tsc api/server.ts --esModuleInterop --skipLibCheck --module commonjs --target es6 --moduleResolution node",
-    "dev:all": "concurrently \"npm run server:start\" \"npm run frontend:dev\"",
-    "build:all": "npm run server:build && npm run frontend:build"
+    "dev:all": "npm run dev",
+    "build:all": "npm run build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",

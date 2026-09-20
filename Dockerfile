@@ -18,7 +18,7 @@ FROM node:20-alpine AS server-runtime
 WORKDIR /app
 COPY --from=base /app/node_modules /app/node_modules
 COPY --from=server-build /app/api/server.js /app/api/
-COPY --from=server-build /app/.env /app/
+COPY --from=server-build /app/package.json /app/
 EXPOSE 5000
 CMD ["node", "api/server.js"]
 

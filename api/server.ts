@@ -11,7 +11,15 @@ app.use(express.json()); // Enable JSON body parsing
 
 // Enable CORS for API routes
 app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "http://localhost:3000");
+    const origin = req.headers.origin;
+    const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:3000").split(',');
+    
+    if (!origin || process.env.CORS_ORIGIN === '*' || allowedOrigins.includes(origin)) {
+        res.header("Access-Control-Allow-Origin", origin || "*");
+    } else {
+        res.header("Access-Control-Allow-Origin", allowedOrigins[0]);
+    }
+    
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     if (req.method === 'OPTIONS') {
@@ -23,9 +31,13 @@ app.use((req, res, next) => {
 
 const httpServer = createServer(app);
 
+const allowedOrigins = process.env.CORS_ORIGIN && process.env.CORS_ORIGIN !== '*' 
+    ? process.env.CORS_ORIGIN.split(',') 
+    : "*";
+
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
     }
 });
@@ -34,16 +46,41 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-it';
 
 // --- API Routes ---
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString()
+    });
+});
+
+app.get('/api/verify', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        res.status(401).json({ valid: false, error: 'No token provided' });
+        return;
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, JWT_SECRET, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
+        if (err || !decoded) {
+            res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+            return;
+        }
+        res.json({ valid: true, user: decoded });
+    });
+});
+
 app.post('/api/login', (req, res) => {
     const { username } = req.body;
-    if (!username) {
+    if (!username || typeof username !== 'string' || !username.trim()) {
         res.status(400).json({ error: 'Username is required' });
         return;
     }
     
+    const cleanUsername = username.trim();
     // Create a token that expires in 24 hours
-    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token });
+    const token = jwt.sign({ username: cleanUsername }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token, username: cleanUsername });
 });
 
 interface WaitingUser {
@@ -74,12 +111,11 @@ io.use((socket, next) => {
         return next(new Error("Authentication error: No token provided"));
     }
 
-    jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
-        if (err) {
+    jwt.verify(token, JWT_SECRET, (err: jwt.VerifyErrors | null, decoded: string | jwt.JwtPayload | undefined) => {
+        if (err || !decoded) {
             return next(new Error("Authentication error: Invalid token"));
         }
-        // Attach user info to socket if needed
-        (socket as any).user = decoded;
+        socket.data.user = decoded;
         next();
     });
 });

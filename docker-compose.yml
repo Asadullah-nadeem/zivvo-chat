@@ -7,9 +7,9 @@ services:
       context: .
       target: server-runtime
     ports:
-      - "0.0.0.0:5000:5000"
-    volumes:
-      - ./api/server.ts:/app/api/server.ts
+      - "5000:5000"
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
     networks:
@@ -21,11 +21,15 @@ services:
       context: .
       target: frontend-runtime
     ports:
-      - "0.0.0.0:3000:3000"
+      - "3000:3000"
     depends_on:
       - zivvochat-server
+    env_file:
+      - .env
     environment:
-      - NEXT_PUBLIC_SERVER_URL=http://zivvochat-server:5000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+      - NEXT_PUBLIC_API_URL=http://localhost:5000/api
     networks:
       - zivvochat-network
 

@@ -15,7 +15,12 @@ export default function VideoChatPage() {
 
     const [status, setStatus] = useState<string>('Initializing...');
     const [permissionGranted, setPermissionGranted] = useState(false);
-    const [myName, setMyName] = useState('');
+    const [myName] = useState<string>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('chatUsername') || '';
+        }
+        return '';
+    });
     const [partnerName, setPartnerName] = useState('Stranger');
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
@@ -232,16 +237,10 @@ export default function VideoChatPage() {
     }, [handleOffer, handleAnswer, handleIceCandidate, initializePeerConnection]);
 
     useEffect(() => {
-        const name = localStorage.getItem('chatUsername');
+        const name = myName || (typeof window !== 'undefined' ? localStorage.getItem('chatUsername') : null);
         if (!name) {
             router.push('/');
             return;
-        }
-        
-        // Fix: Avoid calling setMyName if it's already set to the same value
-        // This prevents the "Calling setState synchronously within an effect" warning
-        if (name !== myName && myName === '') {
-             setMyName(name);
         }
 
         const getPermissions = async () => {
@@ -266,10 +265,11 @@ export default function VideoChatPage() {
                             autoGainControl: true
                         } 
                     });
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.warn("Failed to get video+audio:", err);
+                    const errorName = err instanceof Error ? err.name : '';
                     
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
                         setStatus('Camera/Mic permission denied. Switching to Text mode.');
                         currentMode = 'text';
                     } else {
@@ -284,11 +284,12 @@ export default function VideoChatPage() {
                             });
                             currentMode = 'audio';
                             setStatus('Camera not found. Switching to Audio mode.');
-                        } catch (err2: any) {
+                        } catch (err2: unknown) {
                             console.warn("Failed to get audio:", err2);
+                            const err2Name = err2 instanceof Error ? err2.name : '';
                             // 3. Fallback to Text Only
                             currentMode = 'text';
-                            if (err2.name === 'NotAllowedError') {
+                            if (err2Name === 'NotAllowedError') {
                                 setStatus('Microphone permission denied. Switching to Text mode.');
                             } else {
                                 setStatus('No media devices found. Switching to Text mode.');

@@ -14,7 +14,7 @@ export default function AboutHeroSection({ isPageTitle = false }: AboutHeroSecti
     return (
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="space-y-8 text-center lg:text-left">
-                <TitleTag className="text-4xl sm:text-5xl lg:text-7xl font-black text-black tracking-tight leading-[1.1]">
+                <TitleTag className={`${titleClasses} tracking-tight`}>
                     Building the <br />
                     <span className="text-blue-600">
                         Future of Chat
