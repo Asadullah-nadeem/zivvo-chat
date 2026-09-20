@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { storeJwtToken } from './redis';
 
 // Use environment JWT_SECRET or generate a 512-bit cryptographically secure fallback secret
 const fallbackSecret = crypto.randomBytes(64).toString('hex');
@@ -18,7 +19,7 @@ export interface TokenPayload {
 }
 
 /**
- * Generate a cryptographically secure, unique JWT token for user
+ * Generate a cryptographically secure JWT token for user and store secret token in Redis
  */
 export function generateUserToken(username: string): { token: string; userId: string } {
     const cleanUsername = username.trim();
@@ -34,6 +35,9 @@ export function generateUserToken(username: string): { token: string; userId: st
     };
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+
+    // Store JWT Token in Redis Key-Value Store with TTL
+    storeJwtToken(token, { username: cleanUsername, userId }).catch(console.error);
 
     return { token, userId };
 }

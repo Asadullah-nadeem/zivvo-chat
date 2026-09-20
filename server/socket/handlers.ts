@@ -1,6 +1,11 @@
 import { Server, Socket } from 'socket.io';
 import { verifyUserToken } from '../../lib/auth';
 import { 
+    storeRoomToken, 
+    pushChatMessageRedis, 
+    setCallStateRedis 
+} from '../../lib/redis';
+import { 
     generateSecureRoomToken,
     createSecureRoomUrl,
     recordSessionStart, 
@@ -99,6 +104,8 @@ export function registerSocketHandlers(io: Server) {
 
                 createSecureRoomUrl(roomToken, roomName).catch(console.error);
                 recordSessionStart(roomToken, roomName, partner.name, name).catch(console.error);
+                storeRoomToken(roomToken, { roomName, user1: partner.name, user2: name }).catch(console.error);
+                setCallStateRedis(roomToken, { status: 'CONNECTED', user: name }).catch(console.error);
 
                 io.to(partner.id).emit('match-found', {
                     room: roomName,
@@ -133,6 +140,8 @@ export function registerSocketHandlers(io: Server) {
 
             createSecureRoomUrl(roomToken, roomName).catch(console.error);
             recordSessionStart(roomToken, roomName, 'Zivvo Echo Bot', name).catch(console.error);
+            storeRoomToken(roomToken, { roomName, user1: 'Zivvo Echo Bot', user2: name }).catch(console.error);
+            setCallStateRedis(roomToken, { status: 'BOT_CONNECTED', user: name }).catch(console.error);
 
             socket.emit('match-found', {
                 room: roomName,
@@ -162,16 +171,23 @@ export function registerSocketHandlers(io: Server) {
             
             if (data.room && data.text) {
                 const token = data.roomCode || data.room.replace(/^room_bot_|^room_/, '');
-                saveChatMessage(token, data.sender || 'User', data.text).catch(console.error);
+                const messageObj = { sender: data.sender || 'User', text: data.text, time: data.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+                
+                // Store in PostgreSQL & Redis List simultaneously
+                saveChatMessage(token, messageObj.sender, messageObj.text).catch(console.error);
+                pushChatMessageRedis(token, messageObj).catch(console.error);
             }
 
             if (data.room?.startsWith('room_bot_') || data.room?.startsWith('room-bot-')) {
                 setTimeout(() => {
                     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const botReply = `Hello! I received: "${data.text}". WebRTC and Real-Time Socket communication are active! 🚀`;
-                    socket.emit('chat-message', { sender: 'Zivvo Echo Bot 🤖', text: botReply, time });
+                    const botReply = `Hello! I received: "${data.text}". WebRTC, PostgreSQL, and Redis Key-Value Store are live! ⚡`;
+                    const botMsg = { sender: 'Zivvo Echo Bot 🤖', text: botReply, time };
+
+                    socket.emit('chat-message', botMsg);
                     const token = data.roomCode || data.room.replace(/^room_bot_|^room_/, '');
-                    saveChatMessage(token, 'Zivvo Echo Bot 🤖', botReply).catch(console.error);
+                    saveChatMessage(token, botMsg.sender, botMsg.text).catch(console.error);
+                    pushChatMessageRedis(token, botMsg).catch(console.error);
                 }, 800);
             }
         });
@@ -181,6 +197,7 @@ export function registerSocketHandlers(io: Server) {
                 const userName = data.userName || socket.data.user?.username || 'User';
                 const token = data.roomCode || data.room.replace(/^room_bot_|^room_/, '');
                 recordCallTimestamp(token, userName, data.eventType).catch(console.error);
+                setCallStateRedis(token, { status: data.eventType, user: userName }).catch(console.error);
                 socket.to(data.room).emit('call-event', { ...data, userName });
             }
         });
@@ -194,6 +211,7 @@ export function registerSocketHandlers(io: Server) {
             if (chatRoom) {
                 const token = chatRoom.replace(/^room_bot_|^room_/, '');
                 recordSessionEnd(token).catch(console.error);
+                setCallStateRedis(token, { status: 'ENDED' }).catch(console.error);
                 socket.to(chatRoom).emit('partner-disconnected');
                 socket.leave(chatRoom);
             }

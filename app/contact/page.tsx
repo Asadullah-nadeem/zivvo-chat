@@ -27,10 +27,10 @@ export default function ContactPage() {
         <div className="min-h-screen bg-white text-black selection:bg-blue-100 selection:text-blue-900 font-sans relative overflow-x-hidden">
             {/* Background Pattern */}
             <div className="fixed inset-0 z-0 opacity-[0.35] pointer-events-none"
-                 style={{
-                     backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
-                     backgroundSize: '32px 32px'
-                 }}>
+                style={{
+                    backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)',
+                    backgroundSize: '32px 32px'
+                }}>
             </div>
 
             {/* Glowing Orbs */}
@@ -59,7 +59,7 @@ export default function ContactPage() {
             {/* Main Content */}
             <main className="pt-28 pb-20 px-6 relative z-10">
                 <div className="max-w-4xl mx-auto space-y-16">
-                    
+
                     {/* Header */}
                     <div className="text-center space-y-4">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold shadow-xs">
@@ -106,7 +106,7 @@ export default function ContactPage() {
                                             type="text"
                                             required
                                             className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-black font-semibold placeholder-gray-400 focus:bg-white focus:outline-none focus:border-blue-600 transition-all"
-                                            placeholder="e.g. Asadullah"
+                                            placeholder="Your Name"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                         />

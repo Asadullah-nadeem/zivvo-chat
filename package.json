@@ -31,6 +31,7 @@
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "express": "^5.1.0",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.555.0",
     "next": "16.0.4",
@@ -44,6 +45,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/express": "^5.0.5",
+    "@types/ioredis": "^5.0.0",
     "@types/node": "^20",
     "@types/pg": "^8.11.11",
     "@types/react": "^19",
