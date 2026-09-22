@@ -15,7 +15,7 @@ export default function TermsAgreementPage() {
 
     const handleProceed = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!agreedToTerms) {
             setErrorMessage('You must confirm you are 18+ and agree to the Terms & Privacy Policy to continue.');
             return;
@@ -44,10 +44,10 @@ export default function TermsAgreementPage() {
 
             {/* Background Grid Pattern */}
             <div className="fixed inset-0 z-0 opacity-[0.6] pointer-events-none"
-                 style={{
-                     backgroundImage: 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
-                     backgroundSize: '40px 40px'
-                 }}>
+                style={{
+                    backgroundImage: 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
+                    backgroundSize: '40px 40px'
+                }}>
             </div>
 
             {/* Background Gradients */}
@@ -56,9 +56,9 @@ export default function TermsAgreementPage() {
 
             <main className="flex-1 flex flex-col items-center justify-center relative z-10 w-full pt-28 pb-16 px-4 max-w-4xl mx-auto">
                 <div className="w-full bg-white/90 backdrop-blur-md border border-gray-200/80 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.05)] p-6 sm:p-12">
-                    
+
                     <div className="mb-8 flex flex-wrap justify-between items-center gap-4 border-b border-gray-100 pb-6">
-                        <Link 
+                        <Link
                             href="/"
                             className="inline-flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-blue-600 transition-colors"
                         >
@@ -116,7 +116,7 @@ export default function TermsAgreementPage() {
                                     <h3 className="text-base font-bold text-gray-900 border-b border-gray-200 pb-2">
                                         Summary of Platform Guidelines
                                     </h3>
-                                    
+
                                     <div className="grid sm:grid-cols-3 gap-4">
                                         <div className="p-4 bg-white rounded-xl border border-gray-100 shadow-xs space-y-1">
                                             <div className="text-xl">🔒</div>
@@ -168,8 +168,8 @@ export default function TermsAgreementPage() {
                         <button
                             type="submit"
                             disabled={isLoading || !agreedToTerms}
-                            style={{ 
-                                backgroundColor: agreedToTerms ? '#2563eb' : '#cbd5e1', 
+                            style={{
+                                backgroundColor: agreedToTerms ? '#2563eb' : '#cbd5e1',
                                 color: '#ffffff',
                                 cursor: agreedToTerms ? 'pointer' : 'not-allowed'
                             }}

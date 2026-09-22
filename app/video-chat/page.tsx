@@ -34,11 +34,11 @@ export default function VideoChatPage() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [inputText, setInputText] = useState('');
     const [isSearching, setIsSearching] = useState(false);
-    const [locationCoords, setLocationCoords] = useState<{lat: number, lng: number} | null>(null);
+    const [locationCoords, setLocationCoords] = useState<{ lat: number, lng: number } | null>(null);
 
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-    
+
     const [mode, setMode] = useState<'video' | 'audio' | 'text'>('video');
     const [isMuted, setIsMuted] = useState(false);
 
@@ -188,7 +188,7 @@ export default function VideoChatPage() {
         }
     }, []);
 
-    const connectSocket = useCallback((name: string, loc: {lat: number, lng: number} | null) => {
+    const connectSocket = useCallback((name: string, loc: { lat: number, lng: number } | null) => {
         setStatus('Connecting to server...');
         const socketUrl = config.socketUrl;
         const token = localStorage.getItem('chatToken');
@@ -233,7 +233,7 @@ export default function VideoChatPage() {
             setStatus('Connected');
             setPartnerName(data.partnerName || 'Stranger');
             roomRef.current = data.room;
-            
+
             if (data.roomCode) {
                 window.history.replaceState(null, '', `/video-chat/${data.roomCode}`);
             }
@@ -253,7 +253,7 @@ export default function VideoChatPage() {
             setStatus('Partner disconnected');
             setPartnerName('...');
             setRemoteStream(null);
-            if(peerConnection.current) {
+            if (peerConnection.current) {
                 peerConnection.current.close();
                 peerConnection.current = null;
             }
@@ -307,41 +307,41 @@ export default function VideoChatPage() {
         const getPermissions = async () => {
             try {
                 setStatus('Requesting Permissions...');
-                
+
                 let stream: MediaStream | null = null;
                 let currentMode: 'video' | 'audio' | 'text' = 'video';
 
                 try {
                     // 1. Try Video + Audio with HD constraints
-                    stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
-                            width: { ideal: 1280 }, 
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            width: { ideal: 1280 },
                             height: { ideal: 720 },
                             facingMode: "user",
                             frameRate: { ideal: 30 }
-                        }, 
+                        },
                         audio: {
                             echoCancellation: true,
                             noiseSuppression: true,
                             autoGainControl: true
-                        } 
+                        }
                     });
                 } catch (err: unknown) {
                     console.warn("Failed to get video+audio:", err);
                     const errorName = err instanceof Error ? err.name : '';
-                    
+
                     if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
                         setStatus('Camera/Mic permission denied. Switching to Text mode.');
                         currentMode = 'text';
                     } else {
                         try {
                             // 2. Fallback to Audio Only
-                            stream = await navigator.mediaDevices.getUserMedia({ 
-                                video: false, 
+                            stream = await navigator.mediaDevices.getUserMedia({
+                                video: false,
                                 audio: {
                                     echoCancellation: true,
                                     noiseSuppression: true
-                                } 
+                                }
                             });
                             currentMode = 'audio';
                             setStatus('Camera not found. Switching to Audio mode.');
@@ -363,19 +363,19 @@ export default function VideoChatPage() {
                     localStreamRef.current = stream;
                     setLocalStream(stream);
                 }
-                
+
                 setMode(currentMode);
 
                 let coords = null;
                 try {
-                    const locationPromise = new Promise<{lat: number, lng: number}>((resolve, reject) => {
+                    const locationPromise = new Promise<{ lat: number, lng: number }>((resolve, reject) => {
                         navigator.geolocation.getCurrentPosition(
                             (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
                             (err) => reject(err)
                         );
                     });
 
-                    const timeoutPromise = new Promise<{lat: number, lng: number}>((_, reject) =>
+                    const timeoutPromise = new Promise<{ lat: number, lng: number }>((_, reject) =>
                         setTimeout(() => reject("Timeout"), 2500)
                     );
 
@@ -413,7 +413,7 @@ export default function VideoChatPage() {
     useEffect(() => {
         if (localStreamRef.current) {
             const stream = localStreamRef.current;
-            
+
             // Video tracks: enabled only in 'video' mode
             stream.getVideoTracks().forEach(track => {
                 track.enabled = (mode === 'video');
@@ -453,7 +453,7 @@ export default function VideoChatPage() {
             peerConnection.current.close();
             peerConnection.current = null;
         }
-        
+
         const nextToken = generateCryptoToken64();
         if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', `/video-chat/${nextToken}`);
@@ -473,7 +473,7 @@ export default function VideoChatPage() {
             peerConnection.current.close();
             peerConnection.current = null;
         }
-        
+
         const botToken = generateCryptoToken64();
         if (typeof window !== 'undefined') {
             window.history.replaceState(null, '', `/video-chat/${botToken}`);
@@ -514,7 +514,7 @@ export default function VideoChatPage() {
         e.preventDefault();
         if (!inputText.trim() || !roomRef.current) return;
 
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         setMessages(prev => [...prev, { sender: 'You', text: inputText, time }]);
         socketRef.current?.emit('chat-message', { room: roomRef.current, text: inputText, sender: 'Partner', time });
         setInputText('');
