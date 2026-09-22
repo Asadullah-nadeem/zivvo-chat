@@ -251,6 +251,7 @@ function registerSocketHandlers(io) {
             if (chatRoom) {
                 const token = chatRoom.replace(/^room_bot_|^room_/, '');
                 (0, db_1.recordSessionEnd)(token).catch(console.error);
+                (0, db_1.expireRoomToken)(token).catch(console.error);
                 (0, redis_1.setCallStateRedis)(token, { status: 'ENDED' }).catch(console.error);
                 socket.to(chatRoom).emit('partner-disconnected');
                 socket.leave(chatRoom);

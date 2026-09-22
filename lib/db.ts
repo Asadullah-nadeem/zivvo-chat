@@ -4,6 +4,7 @@ import { eq, sql, count, desc } from 'drizzle-orm';
 import crypto from 'crypto';
 import * as schema from './schema';
 import dotenv from 'dotenv';
+import { setSecretToken, getSecretToken, deleteSecretToken } from './redis';
 
 dotenv.config();
 
@@ -20,13 +21,14 @@ export const db = drizzle(pool, { schema });
 
 export let isDbConnected = false;
 
-// In-Memory Backup Metrics
+// In-Memory Backup Metrics & IP Tracker
 const inMemoryStats = {
     totalUsersCount: 0,
     totalSessionsCount: 0,
     totalMessagesCount: 0,
     usersSet: new Set<string>()
 };
+const inMemoryIpTracker = new Map<string, number>();
 
 /**
  * Generate 64-Character Secure Cryptographic Room Token Key
@@ -117,11 +119,24 @@ export async function initDb(): Promise<boolean> {
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS room_token_logs (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                room_token VARCHAR(128) UNIQUE NOT NULL,
+                ip_address VARCHAR(64) NOT NULL,
+                user_name VARCHAR(255) NOT NULL,
+                is_expired BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                expires_at TIMESTAMP WITH TIME ZONE
+            );
+
             CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
             CREATE INDEX IF NOT EXISTS idx_room_urls_token ON room_urls(room_token);
             CREATE INDEX IF NOT EXISTS idx_chat_sessions_token ON chat_sessions(room_token);
             CREATE INDEX IF NOT EXISTS idx_call_timestamps_session ON call_timestamps(session_id);
             CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id);
+            CREATE INDEX IF NOT EXISTS idx_room_token_logs_ip ON room_token_logs(ip_address);
+            CREATE INDEX IF NOT EXISTS idx_room_token_logs_token ON room_token_logs(room_token);
+            CREATE INDEX IF NOT EXISTS idx_room_token_logs_user ON room_token_logs(user_name);
         `);
         
         client.release();
@@ -344,5 +359,155 @@ export async function getDbStats() {
             totalSessions: inMemoryStats.totalSessionsCount,
             totalMessages: inMemoryStats.totalMessagesCount
         };
+    }
+}
+
+/**
+ * Check IP Rate Limit: Block if 3 or more active/recent room tokens created from same IP
+ */
+export async function checkIpRateLimit(ipAddress: string, userName?: string): Promise<{ allowed: boolean; count: number; message?: string }> {
+    const cleanIp = ipAddress || '127.0.0.1';
+    
+    // Check in Redis first for fast rate limiting
+    const redisCountKey = `ip_attempts:${cleanIp}`;
+    const redisCount = await getSecretToken<{ count: number }>(redisCountKey);
+    if (redisCount && redisCount.count >= 3) {
+        return {
+            allowed: false,
+            count: redisCount.count,
+            message: 'Access Blocked: 3 or more room token attempts detected from your IP address.'
+        };
+    }
+
+    const connected = await ensureDbConnected();
+    if (!connected) {
+        const inMemCount = inMemoryIpTracker.get(cleanIp) || 0;
+        if (inMemCount >= 3) {
+            return {
+                allowed: false,
+                count: inMemCount,
+                message: 'Access Blocked: 3 or more room token attempts detected from your IP address.'
+            };
+        }
+        return { allowed: true, count: inMemCount };
+    }
+
+    try {
+        const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+        const attempts = await db.select({ count: count() })
+            .from(schema.roomTokenLogs)
+            .where(
+                sql`${schema.roomTokenLogs.ipAddress} = ${cleanIp} AND ${schema.roomTokenLogs.isExpired} = FALSE AND ${schema.roomTokenLogs.createdAt} >= ${thirtyMinsAgo}`
+            );
+
+        const currentCount = attempts[0]?.count || 0;
+
+        if (currentCount >= 3) {
+            return {
+                allowed: false,
+                count: currentCount,
+                message: 'Access Blocked: 3 or more active room token attempts detected from your IP address.'
+            };
+        }
+
+        return { allowed: true, count: currentCount };
+    } catch (e) {
+        console.error('DB checkIpRateLimit error:', e);
+        return { allowed: true, count: 0 };
+    }
+}
+
+/**
+ * Record Room Token with IP Address and Display Name in DB & Redis
+ */
+export async function recordRoomToken(roomToken: string, userName: string, ipAddress: string): Promise<boolean> {
+    const cleanIp = ipAddress || '127.0.0.1';
+    const cleanName = userName || 'Guest User';
+
+    // Track attempt count in Redis with 30 min TTL
+    const redisKey = `ip_attempts:${cleanIp}`;
+    const current = await getSecretToken<{ count: number }>(redisKey);
+    const newCount = (current?.count || 0) + 1;
+    await setSecretToken(redisKey, { count: newCount }, 1800);
+
+    // Save token in Redis
+    await setSecretToken(`room_token:${roomToken}`, {
+        roomToken,
+        userName: cleanName,
+        ipAddress: cleanIp,
+        isExpired: false,
+        createdAt: new Date().toISOString()
+    }, 43200);
+
+    // Save in In-Memory fallback
+    inMemoryIpTracker.set(cleanIp, newCount);
+
+    const connected = await ensureDbConnected();
+    if (!connected) return true;
+
+    try {
+        await db.insert(schema.roomTokenLogs).values({
+            roomToken,
+            userName: cleanName,
+            ipAddress: cleanIp,
+            isExpired: false,
+            createdAt: new Date()
+        }).onConflictDoNothing();
+
+        console.log(`💾 DB Room Token Security Logged: Token ${roomToken.slice(0, 8)}... | IP: ${cleanIp} | Name: ${cleanName}`);
+        return true;
+    } catch (e) {
+        console.error('DB recordRoomToken error:', e);
+        return false;
+    }
+}
+
+/**
+ * Expire Room Token in DB & Redis
+ */
+export async function expireRoomToken(roomToken: string): Promise<void> {
+    if (!roomToken) return;
+
+    // Remove or expire from Redis
+    await deleteSecretToken(`room_token:${roomToken}`);
+
+    const connected = await ensureDbConnected();
+    if (!connected) return;
+
+    try {
+        await db.update(schema.roomTokenLogs)
+            .set({ isExpired: true, expiresAt: new Date() })
+            .where(eq(schema.roomTokenLogs.roomToken, roomToken));
+        console.log(`💾 DB Room Token Expired: ${roomToken.slice(0, 8)}...`);
+    } catch (e) {
+        console.error('DB expireRoomToken error:', e);
+    }
+}
+
+/**
+ * Check if Room Token is Valid & Non-Expired
+ */
+export async function isRoomTokenValid(roomToken: string): Promise<boolean> {
+    if (!roomToken) return false;
+
+    // Check Redis first
+    const cachedToken = await getSecretToken<{ isExpired: boolean }>(`room_token:${roomToken}`);
+    if (cachedToken) {
+        return !cachedToken.isExpired;
+    }
+
+    const connected = await ensureDbConnected();
+    if (!connected) return true;
+
+    try {
+        const record = await db.query.roomTokenLogs.findFirst({
+            where: eq(schema.roomTokenLogs.roomToken, roomToken)
+        });
+
+        if (!record) return true;
+        return !record.isExpired;
+    } catch (e) {
+        console.error('DB isRoomTokenValid error:', e);
+        return true;
     }
 }

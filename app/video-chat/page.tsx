@@ -263,19 +263,44 @@ export default function VideoChatPage() {
     }, [handleOffer, handleAnswer, handleIceCandidate, initializePeerConnection]);
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const path = window.location.pathname;
-            if (path === '/video-chat' || path === '/video-chat/') {
-                const token = generateCryptoToken64();
-                window.history.replaceState(null, '', `/video-chat/${token}`);
+        const handlePopState = () => {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('chatToken');
+                window.location.replace('/');
             }
-        }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
     useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('chatToken');
+            const name = localStorage.getItem('chatUsername');
+            if (!token || !name) {
+                window.location.replace('/');
+                return;
+            }
+
+            const path = window.location.pathname;
+            if (path === '/video-chat' || path === '/video-chat/') {
+                const roomToken = generateCryptoToken64();
+                window.history.replaceState(null, '', `/video-chat/${roomToken}`);
+            }
+        }
+    }, [router]);
+
+    useEffect(() => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('chatToken') : null;
         const name = myName || (typeof window !== 'undefined' ? localStorage.getItem('chatUsername') : null);
-        if (!name) {
-            router.push('/');
+
+        if (!token || !name) {
+            if (typeof window !== 'undefined') {
+                window.location.replace('/');
+            } else {
+                router.replace('/');
+            }
             return;
         }
 
@@ -477,7 +502,12 @@ export default function VideoChatPage() {
         }
         localStreamRef.current?.getTracks().forEach(track => track.stop());
         socketRef.current?.disconnect();
-        router.push('/');
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('chatToken');
+            window.location.replace('/');
+        } else {
+            router.replace('/');
+        }
     };
 
     const sendMessage = (e: React.FormEvent) => {

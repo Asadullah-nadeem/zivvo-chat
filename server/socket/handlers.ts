@@ -11,7 +11,8 @@ import {
     recordSessionStart,
     recordSessionEnd,
     saveChatMessage,
-    recordCallTimestamp
+    recordCallTimestamp,
+    expireRoomToken
 } from '../../lib/db';
 
 interface WaitingUser {
@@ -277,6 +278,7 @@ export function registerSocketHandlers(io: Server) {
             if (chatRoom) {
                 const token = chatRoom.replace(/^room_bot_|^room_/, '');
                 recordSessionEnd(token).catch(console.error);
+                expireRoomToken(token).catch(console.error);
                 setCallStateRedis(token, { status: 'ENDED' }).catch(console.error);
                 socket.to(chatRoom).emit('partner-disconnected');
                 socket.leave(chatRoom);

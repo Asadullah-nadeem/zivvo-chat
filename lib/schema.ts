@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, jsonb, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, jsonb, boolean, index } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 /**
@@ -86,3 +86,20 @@ export const sessionAnalytics = pgTable('session_analytics', {
     metricsJson: jsonb('metrics_json').default(sql`'{}'::jsonb`),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow()
 });
+
+/**
+ * 7. Room Token Security Logs Table (Tracks roomToken with IP & Name for Rate Limiting)
+ */
+export const roomTokenLogs = pgTable('room_token_logs', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    roomToken: varchar('room_token', { length: 128 }).notNull().unique(),
+    ipAddress: varchar('ip_address', { length: 64 }).notNull(),
+    userName: varchar('user_name', { length: 255 }).notNull(),
+    isExpired: boolean('is_expired').default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    expiresAt: timestamp('expires_at', { withTimezone: true })
+}, (table) => [
+    index('idx_room_token_logs_ip').on(table.ipAddress),
+    index('idx_room_token_logs_token').on(table.roomToken),
+    index('idx_room_token_logs_user').on(table.userName)
+]);

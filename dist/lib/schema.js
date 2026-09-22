@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sessionAnalytics = exports.chatMessages = exports.callTimestamps = exports.chatSessions = exports.roomUrls = exports.users = void 0;
+exports.roomTokenLogs = exports.sessionAnalytics = exports.chatMessages = exports.callTimestamps = exports.chatSessions = exports.roomUrls = exports.users = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 /**
@@ -83,3 +83,19 @@ exports.sessionAnalytics = (0, pg_core_1.pgTable)('session_analytics', {
     metricsJson: (0, pg_core_1.jsonb)('metrics_json').default((0, drizzle_orm_1.sql) `'{}'::jsonb`),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow()
 });
+/**
+ * 7. Room Token Security Logs Table (Tracks roomToken with IP & Name for Rate Limiting)
+ */
+exports.roomTokenLogs = (0, pg_core_1.pgTable)('room_token_logs', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    roomToken: (0, pg_core_1.varchar)('room_token', { length: 128 }).notNull().unique(),
+    ipAddress: (0, pg_core_1.varchar)('ip_address', { length: 64 }).notNull(),
+    userName: (0, pg_core_1.varchar)('user_name', { length: 255 }).notNull(),
+    isExpired: (0, pg_core_1.boolean)('is_expired').default(false),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow(),
+    expiresAt: (0, pg_core_1.timestamp)('expires_at', { withTimezone: true })
+}, (table) => [
+    (0, pg_core_1.index)('idx_room_token_logs_ip').on(table.ipAddress),
+    (0, pg_core_1.index)('idx_room_token_logs_token').on(table.roomToken),
+    (0, pg_core_1.index)('idx_room_token_logs_user').on(table.userName)
+]);
