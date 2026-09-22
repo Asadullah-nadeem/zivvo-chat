@@ -3,16 +3,14 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import LoginForm from './components/login/LoginForm';
 import AboutHeroSection from './components/sections/AboutHeroSection';
-import FounderSection from './components/sections/FounderSection';
 import ApiSupportSection from './components/sections/ApiSupportSection';
 
 export default function Home() {
     return (
-        // Fix: h-screen hata ke min-h-screen kiya taaki mobile pe scroll ho sake
         <div className="min-h-screen w-full bg-white flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900 relative overflow-x-hidden">
             <Header />
 
-            {/* Notebook Grid Pattern Background - Fixed to cover full height */}
+            {/* Notebook Grid Pattern Background */}
             <div className="fixed inset-0 z-0 opacity-[0.6] pointer-events-none"
                  style={{
                      backgroundImage: 'linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px)',
@@ -24,13 +22,11 @@ export default function Home() {
             <div className="fixed top-0 right-0 -z-10 w-[50%] h-[60%] bg-linear-to-b from-blue-50 to-transparent blur-3xl opacity-80" />
             <div className="fixed bottom-0 left-0 -z-10 w-[40%] h-[40%] bg-linear-to-t from-blue-50 to-transparent blur-3xl opacity-80" />
 
-            {/* Fix: pt-24 added taaki header content ko cover na kare */}
             <main className="flex-1 flex flex-col relative z-10 w-full pt-24 lg:pt-0">
                 
                 {/* Hero Section */}
                 <div className="w-full flex items-center justify-center min-h-[calc(100vh-80px)] lg:min-h-screen pb-12 lg:pb-0">
                     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-                        {/* Grid layout adjust kiya */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
                             <div className="lg:col-span-7 space-y-6 lg:space-y-8 text-center lg:text-left order-1 lg:order-1">
@@ -39,7 +35,6 @@ export default function Home() {
                                     Live Now: Fast Connections
                                 </div>
 
-                                {/* Font size responsive banaya: text-4xl mobile pe, text-7xl desktop pe */}
                                 <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-black tracking-tight leading-[1.1]">
                                     Connect with <br className="hidden lg:block" />
                                     <span className="relative whitespace-nowrap text-blue-600 inline-block">
@@ -77,21 +72,14 @@ export default function Home() {
                 </div>
 
                 {/* About Section with Terminal */}
-                <section id="about" className="w-full py-20 lg:py-32 relative">
+                <section id="about" className="w-full py-16 lg:py-24 relative border-t border-gray-100 bg-gray-50/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <AboutHeroSection />
                     </div>
                 </section>
 
-                {/* Founder Section */}
-                <section className="w-full py-20">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <FounderSection />
-                    </div>
-                </section>
-
                 {/* API & Support Section */}
-                <section className="w-full py-20 lg:py-32">
+                <section className="w-full py-16 lg:py-24 border-t border-gray-100">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <ApiSupportSection />
                     </div>

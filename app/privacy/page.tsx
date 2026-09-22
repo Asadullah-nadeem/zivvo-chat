@@ -1,10 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Shield, Lock, EyeOff, Server, FileText } from 'lucide-react';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
+import { Shield, Lock, EyeOff, Server, FileText } from 'lucide-react';
 
 export default function PrivacyPage() {
     return (
-        <div className="min-h-screen bg-white text-black selection:bg-blue-100 selection:text-blue-900 font-sans relative overflow-x-hidden">
+        <div className="min-h-screen bg-white text-black selection:bg-blue-100 selection:text-blue-900 font-sans flex flex-col relative overflow-x-hidden">
+            <Header />
+
             {/* Background Pattern */}
             <div className="fixed inset-0 z-0 opacity-[0.35] pointer-events-none"
                  style={{
@@ -13,27 +17,8 @@ export default function PrivacyPage() {
                  }}>
             </div>
 
-            {/* Navigation Header */}
-            <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors font-medium">
-                        <ArrowLeft size={18} />
-                        <span>Home</span>
-                    </Link>
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-black">
-                            Z
-                        </div>
-                        <span className="text-xl font-black text-black tracking-tight">Zivvo Chat</span>
-                    </div>
-                    <Link href="/terms" className="text-sm font-semibold text-blue-600 hover:text-blue-800">
-                        Terms of Service
-                    </Link>
-                </div>
-            </nav>
-
             {/* Main Content */}
-            <main className="pt-28 pb-20 px-6 relative z-10">
+            <main className="flex-1 pt-28 pb-20 px-4 sm:px-6 relative z-10">
                 <div className="max-w-4xl mx-auto space-y-12">
                     
                     {/* Header */}
@@ -81,17 +66,17 @@ export default function PrivacyPage() {
                     </div>
 
                     {/* Detailed Clauses */}
-                    <div className="bg-white border-2 border-gray-100 rounded-2xl p-8 sm:p-12 shadow-xs space-y-8 text-gray-700 leading-relaxed">
+                    <div className="bg-white border-2 border-gray-100 rounded-2xl p-6 sm:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] space-y-8 text-gray-700 leading-relaxed">
                         
                         <section className="space-y-3">
                             <h2 className="text-2xl font-bold text-black flex items-center gap-2">
                                 <FileText className="text-blue-600" size={22} /> 1. Information We Collect
                             </h2>
                             <p>
-                                Zivvo Chat operates on a minimal data collection principle:
+                                Zivvo Chat operates on a strict minimal data collection principle:
                             </p>
-                            <ul className="list-disc pl-6 space-y-2 text-sm text-gray-600">
-                                <li><strong>Display Name:</strong> A temporary nickname you choose during your chat session.</li>
+                            <ul className="list-disc pl-6 space-y-2 text-sm sm:text-base text-gray-600">
+                                <li><strong>Display Name / Full Name:</strong> A temporary nickname you choose during your chat session.</li>
                                 <li><strong>Socket Signaling Data:</strong> Temporary WebRTC SDP offers, answers, and ICE candidates required to establish peer-to-peer connections.</li>
                                 <li><strong>Optional Geolocation:</strong> If permitted by your browser, coarse geolocation coordinates to pair you with nearby partners.</li>
                             </ul>
@@ -122,10 +107,8 @@ export default function PrivacyPage() {
                 </div>
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500 bg-white">
-                © {new Date().getFullYear()} Zivvo Chat. All rights reserved.
-            </footer>
+            <Footer />
         </div>
     );
 }
+

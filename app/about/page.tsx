@@ -2,9 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import AboutHeroSection from '../components/sections/AboutHeroSection';
-import FounderSection from '../components/sections/FounderSection';
 import ApiSupportSection from '../components/sections/ApiSupportSection';
 
 export default function AboutPage() {
@@ -25,39 +24,33 @@ export default function AboutPage() {
 
             {/* Navigation */}
             <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-center md:justify-between">
-                    <Link href="/" className="absolute left-6 md:static flex items-center gap-2 text-gray-600 hover:text-black transition-colors">
+                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors font-medium">
                         <ArrowLeft size={20} />
-                        <span className="hidden md:inline font-medium">Back to Home</span>
+                        <span>Back to Home</span>
                     </Link>
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-black">
-                            Z
-                        </div>
+                    <div className="flex items-center gap-3">
+                        <img src="/logo.png" alt="Zivvo Chat Logo" className="w-8 h-8 rounded-lg object-contain" />
                         <span className="text-xl font-black text-black tracking-tight">Zivvo Chat</span>
                     </div>
-                    <div className="hidden md:block w-24"></div> {/* Spacer for centering */}
                 </div>
             </nav>
 
             <main className="pt-24 pb-20 px-6 relative z-10">
-                <div className="max-w-7xl mx-auto space-y-32">
+                <div className="max-w-7xl mx-auto space-y-20">
                     
                     {/* Hero Section with Terminal */}
                     <section>
                         <AboutHeroSection isPageTitle />
                     </section>
 
-                    {/* Founder Section */}
-                    <FounderSection />
-
                     {/* API & Support Section */}
                     <ApiSupportSection />
 
                     {/* Footer */}
-                    <footer className="border-t border-gray-200 pt-12 pb-8 text-center">
-                        <p className="text-gray-500 flex items-center justify-center gap-2 font-medium">
-                            Made with <Heart size={16} className="text-red-500 fill-red-500" /> by Asadullah Nadeem
+                    <footer className="border-t border-gray-200 pt-8 pb-4 text-center">
+                        <p className="text-gray-500 font-medium text-sm">
+                            © {new Date().getFullYear()} Zivvo Chat. All rights reserved.
                         </p>
                     </footer>
                 </div>
@@ -65,3 +58,4 @@ export default function AboutPage() {
         </div>
     );
 }
+

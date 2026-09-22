@@ -13,19 +13,18 @@ export default function LoginForm() {
         e.preventDefault();
         setErrorMessage(null);
 
-        if (username.trim()) {
-            setIsLoading(true);
-            const result = await loginUser(username.trim());
+        const nameToUse = username.trim() || 'Guest User';
+        setIsLoading(true);
+        const result = await loginUser(nameToUse);
 
-            if (result.success && result.token) {
-                localStorage.setItem('chatToken', result.token);
-                localStorage.setItem('chatUsername', username.trim());
-                const cryptoToken = Array.from(window.crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
-                router.push(`/video-chat/${cryptoToken}`);
-            } else {
-                setErrorMessage(result.error || 'Login failed. Please try again.');
-                setIsLoading(false);
-            }
+        if (result.success && result.token) {
+            localStorage.setItem('chatToken', result.token);
+            localStorage.setItem('chatUsername', nameToUse);
+            const cryptoToken = Array.from(window.crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
+            router.push(`/video-chat/${cryptoToken}`);
+        } else {
+            setErrorMessage(result.error || 'Login failed. Please try again.');
+            setIsLoading(false);
         }
     };
 
@@ -53,14 +52,13 @@ export default function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                     <label htmlFor="username" className="block text-sm font-bold text-gray-900 ml-1">
-                        Display Name
+                        Full Name / Display Name
                     </label>
                     <input
                         id="username"
                         type="text"
-                        required
                         className="block w-full px-5 py-4 bg-gray-50 border-2 border-gray-200 rounded-xl text-black font-bold placeholder-gray-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-0 transition-all duration-200"
-                        placeholder="Full Name"
+                        placeholder="Enter your full name..."
                         value={username}
                         onChange={(e) => {
                             setUsername(e.target.value);
@@ -71,14 +69,14 @@ export default function LoginForm() {
 
                 <button
                     type="submit"
-                    disabled={!username.trim() || isLoading}
-                    className="group w-full py-4 px-6 rounded-xl text-white font-bold text-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] flex items-center justify-center gap-2 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
+                    disabled={isLoading}
+                    className="group w-full py-4 px-6 rounded-xl text-white font-bold text-lg bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 transition-all duration-300 shadow-lg hover:shadow-blue-600/30 active:scale-[0.98] flex items-center justify-center gap-2 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                 >
                     {isLoading ? (
                         "Connecting..."
                     ) : (
                         <>
-                            Join Now
+                            Start Private Chat
                             <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>

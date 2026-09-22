@@ -1,15 +1,6 @@
 # Zivvo Chat
 
-![ZC Logo](./public/logo.jpg)
-
 **Zivvo Chat** is an instant, secure, real-time video, audio, and text chat platform built with Next.js, WebRTC, Socket.IO, PostgreSQL, and Redis.
-
----
-
-## Branding Assets
-
-- **ZC Logo**: Located at [`public/logo.jpg`](./public/logo.jpg) – Minimalist blue **ZC** monogram vector logo.
-- **Favicon**: Located at [`app/favicon.ico`](./app/favicon.ico) & [`public/favicon.jpg`](./public/favicon.jpg) – High-resolution ZC app favicon icon.
 
 ---
 
@@ -29,13 +20,13 @@
 ### 1. Install Dependencies
 
 ```bash
-npm install
+pnpm install
 ```
 
 ### 2. Run Development Server
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -43,11 +34,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### 3. Production Build & Start
 
 ```bash
-npm run build
-npm run start
+pnpm run build
+pnpm run start
 ```
-
-
 
 ## Database & Docker Tools
 
