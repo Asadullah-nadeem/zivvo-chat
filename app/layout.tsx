@@ -16,7 +16,12 @@ export const metadata: Metadata = {
     title: "Zivvo Chat - Instant Video Connections",
     description: "Connect with strangers instantly via secure, high-quality video chat. No registration required.",
     icons: {
-        icon: "/favicon.ico",
+        icon: [
+            { url: "/favicon.ico" },
+            { url: "/favicon.png", type: "image/png" }
+        ],
+        shortcut: "/favicon.png",
+        apple: "/favicon.png"
     },
 };
 
