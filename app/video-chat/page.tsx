@@ -495,7 +495,7 @@ export default function VideoChatPage() {
     }
 
     return (
-        <div className="h-[100dvh] w-full flex flex-col md:flex-row overflow-hidden bg-white">
+        <div className="h-[100dvh] w-full max-w-full flex flex-col md:flex-row overflow-hidden bg-white">
             <VideoArea
                 localStream={localStream}
                 remoteStream={remoteStream}
