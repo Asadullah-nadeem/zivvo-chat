@@ -178,84 +178,84 @@ export function registerSocketHandlers(io: Server) {
                 pushChatMessageRedis(token, messageObj).catch(console.error);
             }
 
-            if (data.room?.startsWith('room_bot_') || data.room?.startsWith('room-bot-')) {
-                setTimeout(() => {
-                    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const textLower = (data.text || '').toLowerCase().trim();
+                if (data.room?.startsWith('room_bot_') || data.room?.startsWith('room-bot-')) {
+                    setTimeout(() => {
+                        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        const textLower = (data.text || '').toLowerCase().trim();
 
-                    let botReply = `Hello! I received: "${data.text}". How can I help you today?`;
+                        let botReply = `I received your message: "${data.text}". How can I assist you?`;
 
-                    // 30+ Custom Conversational Bot Responses (Plain Text, No Emojis)
-                    if (textLower === 'hello' || textLower === 'hi' || textLower === 'hey' || textLower === 'hola') {
-                        botReply = `Hello! Great to connect with you! How are you doing today?`;
-                    } else if (textLower.includes('how are you') || textLower.includes('how are u') || textLower.includes('how r u') || textLower.includes('how is it going')) {
-                        botReply = `I'm doing awesome, thanks for asking! How about you?`;
-                    } else if (textLower.includes('what is your name') || textLower.includes("what's your name") || textLower.includes('who are you') || textLower.includes('who r u')) {
-                        botReply = `I'm the Zivvo Echo Bot! Built to chat and test video & audio connections with you.`;
-                    } else if (textLower.includes('bye') || textLower.includes('goodbye') || textLower.includes('see ya') || textLower.includes('ttyl')) {
-                        botReply = `Goodbye! Have an amazing day ahead!`;
-                    } else if (textLower.includes('thank') || textLower.includes('thanks') || textLower.includes('thx')) {
-                        botReply = `You're very welcome!`;
-                    } else if (textLower.includes('good morning')) {
-                        botReply = `Good morning! Hope you have a wonderful day ahead!`;
-                    } else if (textLower.includes('good night')) {
-                        botReply = `Good night! Sleep well and take care!`;
-                    } else if (textLower.includes('good evening')) {
-                        botReply = `Good evening! How was your day?`;
-                    } else if (textLower.includes('good afternoon')) {
-                        botReply = `Good afternoon! Hope your day is going great!`;
-                    } else if (textLower.includes('nice to meet') || textLower.includes('pleasure to meet')) {
-                        botReply = `Nice to meet you too! Glad we connected!`;
-                    } else if (textLower.includes('what can you do') || textLower === 'help' || textLower.includes('feature')) {
-                        botReply = `I can chat with you, help you test video & audio connections, and keep you company!`;
-                    } else if (textLower.includes('what is zivvo') || textLower.includes('about zivvo')) {
-                        botReply = `Zivvo Chat is an instant video & audio connection platform connecting people around the world!`;
-                    } else if (textLower.includes('lol') || textLower.includes('haha') || textLower.includes('lmao') || textLower.includes('hehe')) {
-                        botReply = `Haha, glad you find that funny!`;
-                    } else if (textLower.includes('cool') || textLower.includes('awesome') || textLower.includes('great') || textLower.includes('nice') || textLower.includes('amazing')) {
-                        botReply = `Awesome! Glad you like it!`;
-                    } else if (textLower.includes('joke')) {
-                        botReply = `Why don't scientists trust atoms? Because they make up everything!`;
-                    } else if (textLower.includes('where are you from') || textLower.includes('where do you live')) {
-                        botReply = `I live in the cloud, powered by Zivvo Chat servers!`;
-                    } else if (textLower.includes('are you real') || textLower.includes('human') || textLower.includes('are you bot')) {
-                        botReply = `I'm an AI Echo Bot, here 24/7 to help test connections and keep you entertained!`;
-                    } else if (textLower.includes('time')) {
-                        botReply = `The current time is ${time}`;
-                    } else if (textLower.includes('color')) {
-                        botReply = `I love electric blue! What's your favorite color?`;
-                    } else if (textLower.includes('single') || textLower.includes('relationship') || textLower.includes('marry')) {
-                        botReply = `I'm happily married to my code repository!`;
-                    } else if (textLower.includes('how old') || textLower.includes('your age')) {
-                        botReply = `I was created recently, so I'm forever young in software years!`;
-                    } else if (textLower.includes('who made you') || textLower.includes('who created you') || textLower.includes('developer')) {
-                        botReply = `I was created by the talented Zivvo Chat engineering team!`;
-                    } else if (textLower === 'ok' || textLower === 'okay' || textLower === 'k' || textLower.includes('got it')) {
-                        botReply = `Alright, cool! Let me know if you need anything else.`;
-                    } else if (textLower.includes('sorry')) {
-                        botReply = `No worries at all! Everything is good.`;
-                    } else if (textLower === 'yes' || textLower === 'yeah' || textLower === 'yep' || textLower === 'sure') {
-                        botReply = `Awesome! What's next?`;
-                    } else if (textLower === 'no' || textLower === 'nope' || textLower === 'nah') {
-                        botReply = `Understood! No problem at all.`;
-                    } else if (textLower.includes('weather')) {
-                        botReply = `It's always sunny in digital cyberspace!`;
-                    } else if (textLower.includes('bored')) {
-                        botReply = `Let's fix that! Tell me a story or test your video and audio with me.`;
-                    } else if (textLower === 'ping' || textLower === 'test') {
-                        botReply = `Pong! Connection is crystal clear and super fast!`;
-                    } else if (textLower.includes('love')) {
-                        botReply = `Thank you! Sending virtual positive vibes your way!`;
-                    }
+                        // 30+ Custom Conversational Bot Responses (Plain Text, No Emojis)
+                        if (textLower === 'hello' || textLower === 'hi' || textLower === 'hey' || textLower === 'hola') {
+                            botReply = `Hello! Great to connect with you! How are you doing today?`;
+                        } else if (textLower.includes('how are you') || textLower.includes('how are u') || textLower.includes('how r u') || textLower.includes('how is it going')) {
+                            botReply = `I'm doing awesome, thanks for asking! How about you?`;
+                        } else if (textLower.includes('what is your name') || textLower.includes("what's your name") || textLower.includes('who are you') || textLower.includes('who r u')) {
+                            botReply = `I'm the Zivvo Echo Bot! Built to chat and test video & audio connections with you.`;
+                        } else if (textLower.includes('bye') || textLower.includes('goodbye') || textLower.includes('see ya') || textLower.includes('ttyl')) {
+                            botReply = `Goodbye! Have an amazing day ahead!`;
+                        } else if (textLower.includes('thank') || textLower.includes('thanks') || textLower.includes('thx')) {
+                            botReply = `You're very welcome!`;
+                        } else if (textLower.includes('good morning')) {
+                            botReply = `Good morning! Hope you have a wonderful day ahead!`;
+                        } else if (textLower.includes('good night')) {
+                            botReply = `Good night! Sleep well and take care!`;
+                        } else if (textLower.includes('good evening')) {
+                            botReply = `Good evening! How was your day?`;
+                        } else if (textLower.includes('good afternoon')) {
+                            botReply = `Good afternoon! Hope your day is going great!`;
+                        } else if (textLower.includes('nice to meet') || textLower.includes('pleasure to meet')) {
+                            botReply = `Nice to meet you too! Glad we connected!`;
+                        } else if (textLower.includes('what can you do') || textLower === 'help' || textLower.includes('feature')) {
+                            botReply = `I can chat with you, help you test video & audio connections, and keep you company!`;
+                        } else if (textLower.includes('what is zivvo') || textLower.includes('about zivvo')) {
+                            botReply = `Zivvo Chat is an instant video & audio connection platform connecting people around the world!`;
+                        } else if (textLower.includes('lol') || textLower.includes('haha') || textLower.includes('lmao') || textLower.includes('hehe')) {
+                            botReply = `Haha, glad you find that funny!`;
+                        } else if (textLower.includes('cool') || textLower.includes('awesome') || textLower.includes('great') || textLower.includes('nice') || textLower.includes('amazing')) {
+                            botReply = `Awesome! Glad you like it!`;
+                        } else if (textLower.includes('joke')) {
+                            botReply = `Why don't scientists trust atoms? Because they make up everything!`;
+                        } else if (textLower.includes('where are you from') || textLower.includes('where do you live')) {
+                            botReply = `I live in the cloud, powered by Zivvo Chat servers!`;
+                        } else if (textLower.includes('are you real') || textLower.includes('human') || textLower.includes('are you bot')) {
+                            botReply = `I'm an AI Echo Bot, here 24/7 to help test connections and keep you entertained!`;
+                        } else if (textLower.includes('time')) {
+                            botReply = `The current time is ${time}`;
+                        } else if (textLower.includes('color')) {
+                            botReply = `I love electric blue! What's your favorite color?`;
+                        } else if (textLower.includes('single') || textLower.includes('relationship') || textLower.includes('marry')) {
+                            botReply = `I'm happily married to my code repository!`;
+                        } else if (textLower.includes('how old') || textLower.includes('your age')) {
+                            botReply = `I was created recently, so I'm forever young in software years!`;
+                        } else if (textLower.includes('who made you') || textLower.includes('who created you') || textLower.includes('developer')) {
+                            botReply = `I was created by the talented Zivvo Chat engineering team!`;
+                        } else if (textLower === 'ok' || textLower === 'okay' || textLower === 'k' || textLower.includes('got it')) {
+                            botReply = `Alright, cool! Let me know if you need anything else.`;
+                        } else if (textLower.includes('sorry')) {
+                            botReply = `No worries at all! Everything is good.`;
+                        } else if (textLower === 'yes' || textLower === 'yeah' || textLower === 'yep' || textLower === 'sure') {
+                            botReply = `Awesome! What's next?`;
+                        } else if (textLower === 'no' || textLower === 'nope' || textLower === 'nah') {
+                            botReply = `Understood! No problem at all.`;
+                        } else if (textLower.includes('weather')) {
+                            botReply = `It's always sunny in digital cyberspace!`;
+                        } else if (textLower.includes('bored')) {
+                            botReply = `Let's fix that! Tell me a story or test your video and audio with me.`;
+                        } else if (textLower === 'ping' || textLower === 'test') {
+                            botReply = `Pong! Connection is crystal clear and super fast!`;
+                        } else if (textLower.includes('love')) {
+                            botReply = `Thank you! Sending virtual positive vibes your way!`;
+                        }
 
-                    const botMsg = { sender: 'Zivvo Echo Bot', text: botReply, time };
+                        const botMsg = { sender: 'Zivvo Echo Bot', text: botReply, time };
 
-                    socket.emit('chat-message', botMsg);
-                    const token = data.roomCode || data.room.replace(/^room_bot_|^room_/, '');
-                    saveChatMessage(token, botMsg.sender, botMsg.text).catch(console.error);
-                    pushChatMessageRedis(token, botMsg).catch(console.error);
-                }, 800);
-            }
+                        socket.emit('chat-message', botMsg);
+                        const token = data.roomCode || data.room.replace(/^room_bot_|^room_/, '');
+                        saveChatMessage(token, botMsg.sender, botMsg.text).catch(console.error);
+                        pushChatMessageRedis(token, botMsg).catch(console.error);
+                    }, 800);
+                }
         });
 
         socket.on('call-event', (data: { room: string; roomCode?: string; eventType: string; userName?: string }) => {

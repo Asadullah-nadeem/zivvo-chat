@@ -135,7 +135,7 @@ function registerSocketHandlers(io) {
                 setTimeout(() => {
                     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                     const textLower = (data.text || '').toLowerCase().trim();
-                    let botReply = `Hello! I received: "${data.text}". How can I help you today?`;
+                    let botReply = `I received your message: "${data.text}". How can I assist you?`;
                     // 30+ Custom Conversational Bot Responses (Plain Text, No Emojis)
                     if (textLower === 'hello' || textLower === 'hi' || textLower === 'hey' || textLower === 'hola') {
                         botReply = `Hello! Great to connect with you! How are you doing today?`;
