@@ -37,8 +37,3 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 pnpm run build
 pnpm run start
 ```
-
-## Database & Docker Tools
-
-- **DBeaver CE**: Pre-configured database manager installed at `~/.local/opt/dbeaver` (`dbeaver` command).
-- **Lazydocker**: Installed CLI GUI tool for Docker container management (`lazydocker` command).
